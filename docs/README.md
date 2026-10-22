@@ -13,3 +13,5 @@ A marketplace connecting local food producers with customers around Bristol.
 
 ## Project documentation
 Project notes, requirements, and decisions will be recorded here.
+
+- [Case-study analysis: stakeholders, processes and responsibilities](case-study-analysis.md) — draft for group review under issue #7.
