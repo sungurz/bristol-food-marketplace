@@ -1,6 +1,7 @@
 # Case Study Analysis
 
 Prepared by: Ege Kaan Mansur 
+
 Focus: Producer-side processes and responsibilities  
 Status: Draft for group discussion
 
