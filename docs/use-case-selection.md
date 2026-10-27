@@ -2,7 +2,7 @@
  
 Issues: #11
 Prepared by: Efe Genc
-Status: Waiting for final group decision
+Status: Group agreed on Use Case 2
  
 ## What we need to do
  
@@ -58,9 +58,5 @@ Someone reports a food problem. The system finds affected orders and customers, 
 | 2 | Checkout and create the order | Payment and commission |
 | 3 | Investigate and escalate the incident | Notify affected customers |
  
-## My suggestion
- 
-I suggest **Use Case 1**. It covers everything the brief asks for, needs less code, and gives us the best chance of two working processes in the final demo. To make it stronger, we can add more exception paths, for example retry when the certification service is down.
- 
-If someone in the group is confident with coding, Use Case 2 is the other option.
+
  
