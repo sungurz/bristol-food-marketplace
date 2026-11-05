@@ -45,9 +45,9 @@ outside the implementation scope.
 
 | ID | Backlog item | Owner | Priority | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| S2-01 | Develop i* Strategic Dependency model | Kaan | High | Actors and dependencies are represented and consistent with the enterprise analysis. |
+| S2-01 | Develop i* Strategic Dependency model | Efe | High | Actors and dependencies are represented and consistent with the enterprise analysis. |
 | S2-02 | Develop i* Strategic Rationale model | Ahmet | High | Goals, softgoals, tasks and resources explain stakeholder needs and align with the dependency model. |
-| S2-03 | Model checkout and order preparation | Efe | High | Operational BPMN covers stock validation, fulfilment arrangements, customer confirmation and producer-specific order creation, including alternative paths. |
+| S2-03 | Model checkout and order preparation | Kaan | High | Operational BPMN covers stock validation, fulfilment arrangements, customer confirmation and producer-specific order creation, including alternative paths. |
 | S2-04 | Model payment and order confirmation | Gokdeniz | High | Operational BPMN covers payment, commission, inventory updates, notifications, declined payments and service outages. |
 | S2-05 | Define shared process data | Ahmet | High | Variable names, order states, process handoff and sample data are documented and used consistently. |
 | S2-06 | Implement initial stock validation | Kaan | High | Multi-producer basket quantities and availability are checked. Invalid items prevent checkout progression and require amendment. |
