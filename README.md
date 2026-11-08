@@ -15,6 +15,10 @@ stakeholder and business process analysis, reviewing the group's work,
 and preparing for sprint demonstrations. Each member must understand
 and be able to explain the submitted artefacts.
 
+## Sprint 2 checkout model
+
+The [checkout and order-preparation model](Diagrams/Checkout%20diagram.bpmn), [image preview](Diagrams/Checkout%20diagram.png) and [reading guide](docs/checkout-order-preparation.md) cover issue #29. The guide records validation, connection settings, remaining integration work and contribution information. This model is separate from the stock-validation code in PR #42.
+
 ## Project management approach
 
 We use Scrum with GitHub Projects to organise work into sprints.
