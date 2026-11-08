@@ -1,0 +1,497 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1xo1sj0" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.52.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.10.0">
+  <bpmn:error id="Error_StockCheckUnavailable" name="Stock check unavailable" errorCode="STOCK_CHECK_UNAVAILABLE"/>
+  <bpmn:dataStore id="DataStore_Catalogue" name="Trusted catalogue stock and fulfilment data" isUnlimited="true"/>
+  <bpmn:message id="Message_PendingOrderReady" name="brfn.pending-order-ready"/>
+  <bpmn:collaboration id="Collaboration_053v70p">
+    <bpmn:participant id="Participant_0fk4212" name="BRFN - Checkout and Preparing Orders" processRef="Process_1pnlr6v"/>
+    <bpmn:participant id="Participant_018pc26" name="Payment and finishing the order&#10;The team's other diagram - test payments only"/>
+    <bpmn:messageFlow id="Flow_00blina" sourceRef="Activity_1pb3w7u" targetRef="Participant_018pc26"/>
+    </bpmn:collaboration>
+  <bpmn:process id="Process_1pnlr6v" isExecutable="true">
+    <bpmn:documentation>Checkout and order preparation. Corrected locally on 8 November 2026 while preserving the handmade layout. Form identifiers and worker settings follow the checkout reference contract. The four Form resources, registered workers, trusted data source and payment integration must be supplied and tested by the team. This model has not been deployed or run end to end. Stock validation is read only; all created order records await payment.</bpmn:documentation><bpmn:laneSet id="LaneSet_0pvyzpy">
+      <bpmn:lane id="Lane_11p6v2k" name="Customer">
+        <bpmn:flowNodeRef>Activity_0zlu9c3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_1fcmivw</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0h2fwdj</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_11xwvm2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_188jmld</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_15xdl1q</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_1x0enqn</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_1u3476a</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_0fncvc5" name="Marketplace System">
+        <bpmn:flowNodeRef>Event_0xujwku</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0x7ig7l</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_0rwmiqb</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_120erhm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0124grk</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_0rfqutd</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1pb3w7u</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1pvxten</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0q6876y</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_1ncgj7v</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:userTask id="Activity_0zlu9c3" name="Stock check not working&#10;Try again or cancel">
+      <bpmn:documentation>Explain an unavailable or unusable stock source and let the customer explicitly retry or cancel. Save stockRetry as a boolean. Do not ask the customer to repair backend catalogue data. The agreed worker/operator policy handles persistent technical faults. Retry loads fresh stock again.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:formDefinition formId="brfn-checkout-stock-recovery" bindingType="deployment"/>
+        <zeebe:userTask/>
+        <zeebe:ioMapping>
+          <zeebe:output source="= stockRetry" target="stockRetry"/>
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_06rq9ef</bpmn:incoming>
+      <bpmn:outgoing>Flow_069xhs1</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_1fcmivw" default="Flow_1px6gby" name="Try again?">
+      <bpmn:incoming>Flow_069xhs1</bpmn:incoming>
+      <bpmn:outgoing>Flow_1px6gby</bpmn:outgoing>
+      <bpmn:outgoing>Flow_14iekxg</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_069xhs1" sourceRef="Activity_0zlu9c3" targetRef="Gateway_1fcmivw"/>
+    <bpmn:userTask id="Activity_0h2fwdj" name="Read problems and&#10;change the basket">
+      <bpmn:documentation>Display normal basket item errors and update basket. Remove or change unavailable/short-stock items. The form cannot edit authoritative stock data. Rechecking is mandatory. Returning here from final review also invalidates previous fulfilment and confirmation choices; the subsequent preparation task rebuilds options and quote. This reference names the Form; the Form resource is a separate implementation deliverable.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:formDefinition formId="brfn-checkout-amend" bindingType="deployment"/>
+        <zeebe:userTask/>
+        <zeebe:ioMapping>
+          <zeebe:output source="= basket" target="basket"/>
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0o7qkm1</bpmn:incoming>
+      <bpmn:incoming>Flow_00fl3bc</bpmn:incoming>
+      <bpmn:outgoing>Flow_0295s0p</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Activity_11xwvm2" name="3. Choose delivery or&#10;collection for each producer">
+      <bpmn:documentation>Show every producer, responsibility, delivery or collection choice and requested handover time. Save fulfilmentSelections. Show fulfilmentValidation.errors when returning from rejection. This form chooses arrangements only; basket changes return through Task_Amend and stock validation.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:formDefinition formId="brfn-checkout-fulfilment" bindingType="deployment"/>
+        <zeebe:userTask/>
+        <zeebe:ioMapping>
+          <zeebe:output source="= fulfilmentSelections" target="fulfilmentSelections"/>
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0ymcc4g</bpmn:incoming>
+      <bpmn:incoming>Flow_1n94t39</bpmn:incoming>
+      <bpmn:outgoing>Flow_1wau7ds</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="Activity_188jmld" name="5. Check the order&#10;Confirm, change or cancel">
+      <bpmn:documentation>Present all basket items, quantities, trusted prices/total, each supplier responsibility and selected delivery/collection arrangements. Save checkoutDecision as confirm, amend or cancel. This Form never silently edits items or quantities. Amend routes back through stock validation. Confirm is an explicit customer action; it does not mean payment succeeded.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:formDefinition formId="brfn-checkout-review" bindingType="deployment"/>
+        <zeebe:userTask/>
+        <zeebe:ioMapping>
+          <zeebe:output source="= checkoutDecision" target="checkoutDecision"/>
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_13yykhz</bpmn:incoming>
+      <bpmn:outgoing>Flow_18yta39</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_15xdl1q" default="Flow_01s29px" name="What does the customer choose?">
+      <bpmn:incoming>Flow_18yta39</bpmn:incoming>
+      <bpmn:outgoing>Flow_01s29px</bpmn:outgoing>
+      <bpmn:outgoing>Flow_00fl3bc</bpmn:outgoing>
+    <bpmn:outgoing>Flow_HandmadeConfirm</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_18yta39" sourceRef="Activity_188jmld" targetRef="Gateway_15xdl1q"/>
+    <bpmn:endEvent id="Event_1x0enqn" name="Checkout cancelled">
+      <bpmn:incoming>Flow_01s29px</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_01s29px" sourceRef="Gateway_15xdl1q" targetRef="Event_1x0enqn" name="Cancel"/>
+    <bpmn:startEvent id="Event_0xujwku" name="Customer starts checkout">
+      <bpmn:outgoing>Flow_0mturrp</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Activity_0x7ig7l" name="1. Check items&#10;and stock amounts">
+      <bpmn:documentation>Fetch a fresh trusted stock snapshot then call validateStockVariables from src/stock-validation.js at commit 73e17eb. Match producerId plus productId, combine repeated lines, enforce positive safe integer requested quantities, and block missing/unavailable/short stock. Return the whole stockValidation result on each check. Never accept client supplied stock counts; never deduct or reserve stock here. INVALID_STOCK_DATA requires technical recovery, not ordinary basket amendment. A wrapper explicitly raises STOCK_CHECK_UNAVAILABLE for an unusable stock source/data after its agreed policy. A failed job uses retries and may create an incident; that does not automatically trigger the boundary error.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="validate-stock" retries="3"/>
+        <zeebe:ioMapping>
+          <zeebe:output source="= stockValidation" target="stockValidation"/>
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0mturrp</bpmn:incoming>
+      <bpmn:incoming>Flow_0295s0p</bpmn:incoming>
+      <bpmn:incoming>Flow_14iekxg</bpmn:incoming>
+      <bpmn:outgoing>Flow_0w6tpum</bpmn:outgoing>
+      <bpmn:property id="Property_1q0fr33" name="__targetRef_placeholder"/>
+      <bpmn:dataInputAssociation id="DataInputAssociation_0s3lpjw">
+        <bpmn:sourceRef>DataStoreReference_1brxcey</bpmn:sourceRef>
+        <bpmn:targetRef>Property_1q0fr33</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_0mturrp" sourceRef="Event_0xujwku" targetRef="Activity_0x7ig7l"/>
+    <bpmn:dataStoreReference id="DataStoreReference_1brxcey" name="Saved product details, stock and delivery / collection choices" dataStoreRef="DataStore_Catalogue"/>
+    <bpmn:exclusiveGateway id="Gateway_0rwmiqb" default="Flow_0o7qkm1" name="Are all items and amounts available?">
+      <bpmn:incoming>Flow_0w6tpum</bpmn:incoming>
+      <bpmn:outgoing>Flow_0h2kr4s</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0o7qkm1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0w6tpum" sourceRef="Activity_0x7ig7l" targetRef="Gateway_0rwmiqb"/>
+    <bpmn:serviceTask id="Activity_120erhm" name="2. Find producers and&#10;delivery / collection choices">
+      <bpmn:documentation>Build a nonempty list producers with exactly one entry for every unique producer in the validated basket. Keep each producer's item quantities grouped correctly. Load trusted per-producer delivery/collection options and prices, produce fulfilmentOptions and orderQuote, and clear prior choices as appropriate. Do not allow an empty producer list to reach multi-instance order creation: fail visibly if preparation data is invalid. The original basket remains the source of quantities; validateBasket does not return a normalised basket.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="prepare-fulfilment" retries="3"/>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0h2kr4s</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ymcc4g</bpmn:outgoing>
+      <bpmn:property id="Property_172qe7k" name="__targetRef_placeholder"/>
+      <bpmn:dataInputAssociation id="DataInputAssociation_0ebb3c7">
+        <bpmn:sourceRef>DataStoreReference_1brxcey</bpmn:sourceRef>
+        <bpmn:targetRef>Property_172qe7k</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_0h2kr4s" name="Yes" sourceRef="Gateway_0rwmiqb" targetRef="Activity_120erhm">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= stockValidation.canCheckout = true</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:exclusiveGateway id="Gateway_0rfqutd" name="Are the choices and times OK?" default="Flow_1n94t39">
+      <bpmn:incoming>Flow_0ds2w3f</bpmn:incoming>
+      <bpmn:outgoing>Flow_13yykhz</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1n94t39</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0ds2w3f" sourceRef="Activity_0124grk" targetRef="Gateway_0rfqutd"/>
+    <bpmn:boundaryEvent id="Event_0q6876y" attachedToRef="Activity_0x7ig7l" cancelActivity="true">
+      <bpmn:documentation>Interrupting error catch for explicitly raised STOCK_CHECK_UNAVAILABLE. Ordinary insufficient stock completes the task with false and follows Gateway_0rwmiqb. Transient failures signalled only as failed jobs are retried by the engine and may become incidents; this catch is not an automatic retry-exhaustion handler.</bpmn:documentation>
+      <bpmn:outgoing>Flow_06rq9ef</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_0qxrcwz" errorRef="Error_StockCheckUnavailable"/>
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_06rq9ef" name="Stock check not working" sourceRef="Event_0q6876y" targetRef="Activity_0zlu9c3"/>
+    <bpmn:endEvent id="Event_1u3476a" name="Checkout cancelled">
+      <bpmn:incoming>Flow_1px6gby</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1px6gby" name="Cancel" sourceRef="Gateway_1fcmivw" targetRef="Event_1u3476a"/>
+    <bpmn:sequenceFlow id="Flow_0295s0p" name="Check the changed basket" sourceRef="Activity_0h2fwdj" targetRef="Activity_0x7ig7l"/>
+    <bpmn:sequenceFlow id="Flow_14iekxg" name="Try again" sourceRef="Gateway_1fcmivw" targetRef="Activity_0x7ig7l">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= stockRetry = true</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0o7qkm1" name="No - change basket" sourceRef="Gateway_0rwmiqb" targetRef="Activity_0h2fwdj"/>
+    <bpmn:sequenceFlow id="Flow_0ymcc4g" sourceRef="Activity_120erhm" targetRef="Activity_11xwvm2"/>
+    <bpmn:sequenceFlow id="Flow_1wau7ds" sourceRef="Activity_11xwvm2" targetRef="Activity_0124grk"/>
+    <bpmn:sequenceFlow id="Flow_13yykhz" name="Yes" sourceRef="Gateway_0rfqutd" targetRef="Activity_188jmld">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= fulfilmentValidation.isValid = true</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1n94t39" name="No - change choices" sourceRef="Gateway_0rfqutd" targetRef="Activity_11xwvm2"/>
+    <bpmn:serviceTask id="Activity_0124grk" name="4. Check the choices and&#10;48-hour preparation time">
+      <bpmn:documentation>Validate current supplier options and the requested delivery/collection commitment for every producer, using an agreed trusted server clock, explicit timezone and minimum 48-hour preparation lead time. Return fulfilmentValidation with boolean isValid and structured errors. Fresh trusted options may be refreshed here. No last-minute surplus exemption is assumed. On technical failure use job failure/retries and visible incident handling, never return a successful business decision.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="validate-fulfilment" retries="3"/>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1wau7ds</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ds2w3f</bpmn:outgoing>
+      <bpmn:property id="Property_0azgxfw" name="__targetRef_placeholder"/>
+    </bpmn:serviceTask>
+    <bpmn:subProcess id="Activity_1pvxten" name="6. Make the main order and each producer's order">
+      <bpmn:documentation>Expanded embedded subprocess, entered only after a valid basket, valid fulfilment and explicit customer confirmation. Create the parent order first, then one linked pending part per unique producer. Completion waits for every producer part. Worker retries must be idempotent: parent keyed by checkoutId; producer part by orderId and producerId. No stock deduction or producer notification occurs here. Technical failures pause/retry or create an incident and cannot proceed to the payment handoff.</bpmn:documentation>
+      <bpmn:incoming>Flow_HandmadeConfirm</bpmn:incoming><bpmn:outgoing>Flow_02cstwl</bpmn:outgoing>
+      <bpmn:serviceTask id="Activity_0yq03z4" name="Make main order&#10;Waiting for payment">
+        <bpmn:documentation>Create or return the existing overall order for checkoutId using the confirmed basket, trusted quote, customer and fulfilment data. Return orderId and orderState representing awaiting payment. The exact state identifier is a reference convention to agree in issue 31; no successful payment is implied.</bpmn:documentation>
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="create-marketplace-order" retries="3"/>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_1rnl60m</bpmn:incoming>
+        <bpmn:outgoing>Flow_1al8ran</bpmn:outgoing>
+        <bpmn:property id="Property_08m9s0z" name="__targetRef_placeholder"/>
+      </bpmn:serviceTask>
+      <bpmn:serviceTask id="Activity_0inr18k" name="Make each producer's&#10;order under main order">
+        <bpmn:documentation>Parallel multi-instance task, one instance per entry in the validated nonempty producers list. Each instance receives local producer and parent orderId. Create or return exactly one linked part for this producer, with its own items, quantities and fulfilment arrangement, also awaiting payment. Return local producerOrder for collection. Use orderId plus producerId as a duplicate-handling key; do not modify shared output variables across instances.</bpmn:documentation>
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="create-producer-order" retries="3"/>
+          <zeebe:ioMapping>
+            <zeebe:input source="= orderId" target="orderId"/>
+            <zeebe:output source="= producerOrder" target="producerOrder"/>
+          </zeebe:ioMapping>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_1al8ran</bpmn:incoming>
+        <bpmn:outgoing>Flow_18obolb</bpmn:outgoing>
+        <bpmn:property id="Property_0d2mqeg" name="__targetRef_placeholder"/>
+        <bpmn:multiInstanceLoopCharacteristics isSequential="false">
+          <bpmn:extensionElements>
+            <zeebe:loopCharacteristics inputCollection="= producers" inputElement="producer" outputCollection="producerOrders" outputElement="= producerOrder"/>
+          </bpmn:extensionElements>
+        </bpmn:multiInstanceLoopCharacteristics>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="Event_0wwlcwo">
+        <bpmn:incoming>Flow_18obolb</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_1al8ran" sourceRef="Activity_0yq03z4" targetRef="Activity_0inr18k"/>
+      <bpmn:sequenceFlow id="Flow_18obolb" sourceRef="Activity_0inr18k" targetRef="Event_0wwlcwo"/>
+      <bpmn:startEvent id="Event_0ma247c">
+        <bpmn:outgoing>Flow_1rnl60m</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:sequenceFlow id="Flow_1rnl60m" sourceRef="Event_0ma247c" targetRef="Activity_0yq03z4"/>
+    </bpmn:subProcess>
+    <bpmn:sendTask id="Activity_1pb3w7u" name="7. Send orders&#10;to the payment steps" messageRef="Message_PendingOrderReady">
+      <bpmn:documentation>Publish brfn.pending-order-ready with orderId, checkoutId, all producerOrders, trusted amount/currency and fulfilment data to the separate team payment process. Correlate by orderId and make duplicate publication safe. Complete only after the handoff is durably accepted under the chosen integration contract. This task does not charge the customer, calculate commission or confirm paid status; the payment process owns those steps. Missing/failed handoff pauses and retries or creates an incident rather than pretending payment began.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="handoff-payment" retries="3"/>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_02cstwl</bpmn:incoming>
+      <bpmn:outgoing>Flow_1w5o8f3</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="Event_1ncgj7v" name="Order ready waiting for payment">
+      <bpmn:incoming>Flow_1w5o8f3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1w5o8f3" sourceRef="Activity_1pb3w7u" targetRef="Event_1ncgj7v"/>
+    <bpmn:sequenceFlow id="Flow_02cstwl" sourceRef="Activity_1pvxten" targetRef="Activity_1pb3w7u"/>
+    <bpmn:sequenceFlow id="Flow_00fl3bc" sourceRef="Gateway_15xdl1q" targetRef="Activity_0h2fwdj" name="Change basket"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= checkoutDecision = "amend"</bpmn:conditionExpression></bpmn:sequenceFlow>
+  <bpmn:sequenceFlow id="Flow_HandmadeConfirm" name="Confirm" sourceRef="Gateway_15xdl1q" targetRef="Activity_1pvxten"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= checkoutDecision = "confirm"</bpmn:conditionExpression></bpmn:sequenceFlow></bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_053v70p">
+      <bpmndi:BPMNShape id="Participant_0fk4212_di" bpmnElement="Participant_0fk4212" isHorizontal="false">
+        <dc:Bounds x="112" y="80" width="1138" height="1560"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_11p6v2k_di" bpmnElement="Lane_11p6v2k" isHorizontal="false" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="112" y="110" width="368" height="1530"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_0fncvc5_di" bpmnElement="Lane_0fncvc5" isHorizontal="false" bioc:stroke="#5b176d" bioc:fill="#e1bee7" color:background-color="#e1bee7" color:border-color="#5b176d">
+        <dc:Bounds x="480" y="110" width="770" height="1530"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0zlu9c3_di" bpmnElement="Activity_0zlu9c3">
+        <dc:Bounds x="270" y="150" width="140" height="100"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1fcmivw_di" bpmnElement="Gateway_1fcmivw" isMarkerVisible="true">
+        <dc:Bounds x="315" y="295" width="50" height="50"/>
+      <bpmndi:BPMNLabel><dc:Bounds x="373" y="288" width="86" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0h2fwdj_di" bpmnElement="Activity_0h2fwdj">
+        <dc:Bounds x="270" y="390" width="140" height="100"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_11xwvm2_di" bpmnElement="Activity_11xwvm2">
+        <dc:Bounds x="270" y="550" width="140" height="100"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_04w2sud" bpmnElement="Activity_188jmld">
+        <dc:Bounds x="270" y="870" width="140" height="100"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_15xdl1q_di" bpmnElement="Gateway_15xdl1q" isMarkerVisible="true">
+        <dc:Bounds x="315" y="1015" width="50" height="50"/>
+      <bpmndi:BPMNLabel><dc:Bounds x="374" y="1064" width="120" height="28"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1x0enqn_di" bpmnElement="Event_1x0enqn">
+        <dc:Bounds x="322" y="1122" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="317" y="1165" width="47" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0xujwku_di" bpmnElement="Event_0xujwku">
+        <dc:Bounds x="792" y="182" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="771" y="144.5" width="78" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0x7ig7l_di" bpmnElement="Activity_0x7ig7l">
+        <dc:Bounds x="735" y="270" width="150" height="100"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_1brxcey_di" bpmnElement="DataStoreReference_1brxcey">
+        <dc:Bounds x="965" y="415" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1016" y="363" width="87" height="53"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1b4iqqq" bpmnElement="Gateway_0rwmiqb" isMarkerVisible="true">
+        <dc:Bounds x="785" y="425" width="50" height="50"/>
+      <bpmndi:BPMNLabel><dc:Bounds x="851" y="477" width="120" height="40"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0tw4v0j" bpmnElement="Activity_120erhm">
+        <dc:Bounds x="735" y="530" width="150" height="100"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1hrrpv7" bpmnElement="Activity_0124grk">
+        <dc:Bounds x="735" y="680" width="150" height="100"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_19eeobd" bpmnElement="Gateway_0rfqutd" isMarkerVisible="true">
+        <dc:Bounds x="785" y="795" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="842" y="806" width="76" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1u3476a_di" bpmnElement="Event_1u3476a">
+        <dc:Bounds x="212" y="302" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="206" y="345" width="49" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1yft34q_di" bpmnElement="Activity_1pb3w7u">
+        <dc:Bounds x="780" y="1410" width="150" height="100"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1ncgj7v_di" bpmnElement="Event_1ncgj7v">
+        <dc:Bounds x="837" y="1532" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="826" y="1575" width="59" height="40"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_07yl1ta_di" bpmnElement="Activity_1pvxten" isExpanded="true">
+        <dc:Bounds x="560" y="1190" width="590" height="200"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_040qq0p" bpmnElement="Activity_0inr18k">
+        <dc:Bounds x="885" y="1230" width="150" height="100"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0wwlcwo_di" bpmnElement="Event_0wwlcwo">
+        <dc:Bounds x="1062" y="1262" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0sjpz8p" bpmnElement="Activity_0yq03z4">
+        <dc:Bounds x="665" y="1230" width="150" height="100"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0ma247c_di" bpmnElement="Event_0ma247c">
+        <dc:Bounds x="602" y="1262" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1al8ran_di" bpmnElement="Flow_1al8ran">
+        <di:waypoint x="815" y="1280"/>
+        <di:waypoint x="885" y="1280"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_18obolb_di" bpmnElement="Flow_18obolb">
+        <di:waypoint x="1035" y="1280"/>
+        <di:waypoint x="1062" y="1280"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1rnl60m_di" bpmnElement="Flow_1rnl60m">
+        <di:waypoint x="638" y="1280"/>
+        <di:waypoint x="665" y="1280"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Event_0q6876y_di" bpmnElement="Event_0q6876y">
+        <dc:Bounds x="717" y="302" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_069xhs1_di" bpmnElement="Flow_069xhs1">
+        <di:waypoint x="340" y="250"/>
+        <di:waypoint x="340" y="295"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_18yta39_di" bpmnElement="Flow_18yta39">
+        <di:waypoint x="340" y="970"/>
+        <di:waypoint x="340" y="1015"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_01s29px_di" bpmnElement="Flow_01s29px">
+        <di:waypoint x="340" y="1065"/>
+        <di:waypoint x="340" y="1122"/>
+      <bpmndi:BPMNLabel><dc:Bounds x="351" y="1084" width="40" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0mturrp_di" bpmnElement="Flow_0mturrp">
+        <di:waypoint x="810" y="218"/>
+        <di:waypoint x="810" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0w6tpum_di" bpmnElement="Flow_0w6tpum">
+        <di:waypoint x="810" y="370"/>
+        <di:waypoint x="810" y="425"/>
+        </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0h2kr4s_di" bpmnElement="Flow_0h2kr4s">
+        <di:waypoint x="810" y="475"/>
+        <di:waypoint x="810" y="530"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="791" y="503.5" width="18" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ds2w3f_di" bpmnElement="Flow_0ds2w3f">
+        <di:waypoint x="810" y="780"/>
+        <di:waypoint x="810" y="795"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_06rq9ef_di" bpmnElement="Flow_06rq9ef">
+        <di:waypoint x="717" y="320"/>
+        <di:waypoint x="450" y="320"/>
+        <di:waypoint x="450" y="180"/>
+        <di:waypoint x="410" y="180"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="561" y="286" width="78" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1px6gby_di" bpmnElement="Flow_1px6gby">
+        <di:waypoint x="315" y="320"/>
+        <di:waypoint x="248" y="320"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="264" y="302" width="35" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0295s0p_di" bpmnElement="Flow_0295s0p">
+        <di:waypoint x="340" y="390"/>
+        <di:waypoint x="340" y="380"/>
+        <di:waypoint x="420" y="380"/>
+        <di:waypoint x="420" y="360"/>
+        <di:waypoint x="735" y="360"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="561" y="362" width="78" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14iekxg_di" bpmnElement="Flow_14iekxg">
+        <di:waypoint x="365" y="320"/>
+        <di:waypoint x="390" y="320"/>
+        <di:waypoint x="390" y="350"/>
+        <di:waypoint x="735" y="350"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="577" y="332" width="46" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0o7qkm1_di" bpmnElement="Flow_0o7qkm1">
+        <di:waypoint x="785" y="450"/>
+        <di:waypoint x="588" y="450"/>
+        <di:waypoint x="588" y="440"/>
+        <di:waypoint x="410" y="440"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="560" y="406" width="79" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ymcc4g_di" bpmnElement="Flow_0ymcc4g">
+        <di:waypoint x="735" y="580"/>
+        <di:waypoint x="575" y="580"/>
+        <di:waypoint x="575" y="600"/>
+        <di:waypoint x="410" y="600"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1wau7ds_di" bpmnElement="Flow_1wau7ds">
+        <di:waypoint x="340" y="650"/>
+        <di:waypoint x="340" y="665"/>
+        <di:waypoint x="810" y="665"/>
+        <di:waypoint x="810" y="680"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13yykhz_di" bpmnElement="Flow_13yykhz">
+        <di:waypoint x="810" y="845"/>
+        <di:waypoint x="810" y="920"/>
+        <di:waypoint x="410" y="920"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="591" y="903" width="18" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1n94t39_di" bpmnElement="Flow_1n94t39">
+        <di:waypoint x="785" y="820"/>
+        <di:waypoint x="210" y="820"/>
+        <di:waypoint x="210" y="610"/>
+        <di:waypoint x="270" y="610"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="581" y="786" width="84" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1w5o8f3_di" bpmnElement="Flow_1w5o8f3">
+        <di:waypoint x="855" y="1510"/>
+        <di:waypoint x="855" y="1532"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_02cstwl_di" bpmnElement="Flow_02cstwl">
+        <di:waypoint x="855" y="1390"/>
+        <di:waypoint x="855" y="1410"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_00fl3bc_di" bpmnElement="Flow_00fl3bc">
+        <di:waypoint x="315" y="1040"/>
+        <di:waypoint x="160" y="1040"/>
+        <di:waypoint x="160" y="440"/>
+        <di:waypoint x="270" y="440"/>
+      <bpmndi:BPMNLabel><dc:Bounds x="165" y="970" width="78" height="27"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Participant_0uz06vr_di" bpmnElement="Participant_018pc26" isHorizontal="true">
+        <dc:Bounds x="1280" y="1420" width="300" height="90"/>
+        <bpmndi:BPMNLabel/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DataInputAssociation_0s3lpjw_di" bpmnElement="DataInputAssociation_0s3lpjw">
+        <di:waypoint x="990" y="410"/>
+        <di:waypoint x="990" y="390"/>
+        <di:waypoint x="850" y="390"/>
+        <di:waypoint x="850" y="370"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_0ebb3c7_di" bpmnElement="DataInputAssociation_0ebb3c7">
+        <di:waypoint x="990" y="470"/>
+        <di:waypoint x="990" y="510"/>
+        <di:waypoint x="850" y="510"/>
+        <di:waypoint x="850" y="530"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_00blina_di" bpmnElement="Flow_00blina">
+        <di:waypoint x="930" y="1460"/>
+        <di:waypoint x="1280" y="1460"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_HandmadeConfirm_di" bpmnElement="Flow_HandmadeConfirm"><di:waypoint x="365" y="1040"/><di:waypoint x="855" y="1040"/><di:waypoint x="855" y="1190"/><bpmndi:BPMNLabel><dc:Bounds x="570" y="1017" width="48" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge></bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
