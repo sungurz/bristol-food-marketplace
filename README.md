@@ -54,3 +54,7 @@ explaining their own work.
 
 The Contribution Matrix records actual contributions and is reviewed
 and signed by all members before submission through the repository.
+
+## Initial stock validation
+
+The [stock-validation guide](docs/stock-validation.md) explains the initial component for Sprint 2 issue #32, its proposed data format and the remaining Camunda integration work. Run `node --test` for component tests or `node examples/stock-validation-demo.js` for local examples. Node.js 22 or later is required; no extra packages are needed.
