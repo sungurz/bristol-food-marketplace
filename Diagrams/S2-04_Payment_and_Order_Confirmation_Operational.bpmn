@@ -180,7 +180,7 @@
       <bpmn:incoming>Flow_1dx3avb</bpmn:incoming>
       <bpmn:outgoing>Flow_1mz257w</bpmn:outgoing>
     </bpmn:sendTask>
-    <bpmn:intermediateCatchEvent id="Event_0ox5vmr" name="Wait before status recheck">
+    <bpmn:intermediateCatchEvent id="Event_0ox5vmr" name="Wait 30 seconds before&#10;checking again">
       <bpmn:incoming>Flow_0rgo0ur</bpmn:incoming>
       <bpmn:incoming>Flow_1jy7y87</bpmn:incoming>
       <bpmn:incoming>Flow_0ogbnd1</bpmn:incoming>
@@ -238,7 +238,7 @@
     <bpmn:endEvent id="Event_10cbpb0" name="Order confirmed and notifications sent">
       <bpmn:incoming>Flow_19awlzm</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:boundaryEvent id="Event_1m3p2n9" name="No response / outage" attachedToRef="Activity_0rwjf9a">
+    <bpmn:boundaryEvent id="Event_1m3p2n9" name="No reply after 30 seconds" attachedToRef="Activity_0rwjf9a">
       <bpmn:outgoing>Flow_0ogbnd1</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_17fodh8">
         <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT30S</bpmn:timeDuration>
@@ -266,7 +266,7 @@
     <bpmn:sequenceFlow id="Flow_1dx3avb" name="Declined" sourceRef="Gateway_0cdkjdu" targetRef="Activity_1k39dq7">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=paymentStatus = "declined"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_0rgo0ur" name="Unknown" sourceRef="Gateway_0cdkjdu" targetRef="Event_0ox5vmr" />
+    <bpmn:sequenceFlow id="Flow_0rgo0ur" name="Reply received with no final status" sourceRef="Gateway_0cdkjdu" targetRef="Event_0ox5vmr" />
     <bpmn:sequenceFlow id="Flow_1u8liru" name="Succeeded" sourceRef="Gateway_0cdkjdu" targetRef="Activity_0hdu9ap">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=paymentStatus = "succeeded"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
@@ -302,7 +302,7 @@
       <bpmn:incoming>Flow_0agjyv7</bpmn:incoming>
       <bpmn:outgoing>Flow_01g4rtc</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="Gateway_0oerj9w" name="Test scenario?" default="Flow_0fynta2">
+    <bpmn:exclusiveGateway id="Gateway_0oerj9w" name="Test scenario?">
       <bpmn:incoming>Flow_01g4rtc</bpmn:incoming>
       <bpmn:outgoing>Flow_0v9gjvc</bpmn:outgoing>
       <bpmn:outgoing>Flow_0fynta2</bpmn:outgoing>
@@ -312,7 +312,7 @@
       <bpmn:incoming>Flow_0v9gjvc</bpmn:incoming>
       <bpmn:outgoing>Flow_0ee3kfw</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:endEvent id="Event_0shpu7o" name="No response &#10;Simulated service outage">
+    <bpmn:endEvent id="Event_0shpu7o" name="Request ends without&#10;sending a reply">
       <bpmn:incoming>Flow_0fynta2</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:serviceTask id="Activity_0sx1775" name="Store declined result against attempt ID">
@@ -348,9 +348,15 @@
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_0agjyv7" sourceRef="Event_1xiq0ub" targetRef="Activity_1glue14" />
     <bpmn:sequenceFlow id="Flow_01g4rtc" sourceRef="Activity_1glue14" targetRef="Gateway_0oerj9w" />
-    <bpmn:sequenceFlow id="Flow_0v9gjvc" name="Approve" sourceRef="Gateway_0oerj9w" targetRef="Activity_0gno2rw" />
-    <bpmn:sequenceFlow id="Flow_0fynta2" name="Outage" sourceRef="Gateway_0oerj9w" targetRef="Event_0shpu7o" />
-    <bpmn:sequenceFlow id="Flow_16124ri" name="Decline" sourceRef="Gateway_0oerj9w" targetRef="Activity_0sx1775" />
+    <bpmn:sequenceFlow id="Flow_0v9gjvc" name="Approve" sourceRef="Gateway_0oerj9w" targetRef="Activity_0gno2rw">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=testScenario = "approve"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0fynta2" name="Simulate outage" sourceRef="Gateway_0oerj9w" targetRef="Event_0shpu7o">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=testScenario = "outage"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_16124ri" name="Decline" sourceRef="Gateway_0oerj9w" targetRef="Activity_0sx1775">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=testScenario = "decline"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_0ee3kfw" sourceRef="Activity_0gno2rw" targetRef="Gateway_1p5tcw0" />
     <bpmn:sequenceFlow id="Flow_0g0tgog" sourceRef="Activity_0sx1775" targetRef="Gateway_1p5tcw0" />
     <bpmn:sequenceFlow id="Flow_1pydkhr" sourceRef="Gateway_1p5tcw0" targetRef="Activity_04vmrcm" />
@@ -623,7 +629,7 @@
       <bpmndi:BPMNShape id="Event_0ox5vmr_di" bpmnElement="Event_0ox5vmr">
         <dc:Bounds x="1682" y="1002" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1655" y="964.5" width="89" height="27" />
+          <dc:Bounds x="1542" y="949" width="145" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_132msx6_di" bpmnElement="Activity_157huwf">
@@ -668,7 +674,7 @@
       <bpmndi:BPMNShape id="Event_1m3p2n9_di" bpmnElement="Event_1m3p2n9">
         <dc:Bounds x="1472" y="762" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1485" y="736" width="69" height="27" />
+          <dc:Bounds x="1512" y="758" width="143" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_0ogv1dy_di" bpmnElement="Flow_0ogv1dy">
@@ -745,7 +751,7 @@
         <di:waypoint x="1465" y="1020" />
         <di:waypoint x="1682" y="1020" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1551" y="1002" width="46" height="14" />
+          <dc:Bounds x="1479" y="1026" width="192" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1u8liru_di" bpmnElement="Flow_1u8liru">
@@ -825,7 +831,7 @@
       <bpmndi:BPMNShape id="Event_0shpu7o_di" bpmnElement="Event_0shpu7o">
         <dc:Bounds x="2512" y="602" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2487" y="645" width="87" height="40" />
+          <dc:Bounds x="2469" y="645" width="122" height="28" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1i90lbj_di" bpmnElement="Activity_0sx1775">
@@ -886,7 +892,7 @@
         <di:waypoint x="2530" y="430" />
         <di:waypoint x="2530" y="602" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2476" y="443" width="37" height="14" />
+          <dc:Bounds x="2386" y="410" width="102" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_16124ri_di" bpmnElement="Flow_16124ri">
