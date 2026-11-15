@@ -1,0 +1,92 @@
+{
+  "components": [
+    {
+      "text": "### Some items need changing \nWe can not fill your basket as it is. Check the problems below, change the quantities, then continue. We will check stock again.",
+      "type": "text",
+      "layout": {
+        "row": "Row_0fj2v3e",
+        "columns": null
+      },
+      "id": "Field_01h4m79"
+    },
+    {
+      "type": "table",
+      "layout": {
+        "row": "Row_1241yhg",
+        "columns": null
+      },
+      "label": "Problems found",
+      "rowCount": 10,
+      "columns": [
+        {
+          "label": "Problem",
+          "key": "code"
+        }
+      ],
+      "id": "Field_10292a6",
+      "dataSource": "=stockValidation.errors"
+    },
+    {
+      "label": "Your basket",
+      "components": [
+        {
+          "label": "Producer",
+          "type": "textfield",
+          "layout": {
+            "row": "Row_1dcv5fl",
+            "columns": null
+          },
+          "id": "Field_0iu4xa1",
+          "key": "producerId",
+          "readonly": true
+        },
+        {
+          "label": "Product",
+          "type": "textfield",
+          "layout": {
+            "row": "Row_1dcv5fl",
+            "columns": null
+          },
+          "id": "Field_0za4wht",
+          "key": "productId",
+          "readonly": true
+        },
+        {
+          "label": "Quantity",
+          "type": "number",
+          "layout": {
+            "row": "Row_1dcv5fl",
+            "columns": null
+          },
+          "id": "Field_0mj0aoi",
+          "key": "quantity",
+          "validate": {
+            "required": true,
+            "min": "1"
+          }
+        }
+      ],
+      "showOutline": true,
+      "isRepeating": true,
+      "allowAddRemove": true,
+      "defaultRepetitions": 1,
+      "type": "dynamiclist",
+      "layout": {
+        "row": "Row_1se968p",
+        "columns": null
+      },
+      "id": "Field_01q95eg",
+      "path": "basket.items",
+      "properties": {}
+    }
+  ],
+  "type": "default",
+  "id": "brfn-checkout-amend",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.10.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.52.0"
+  },
+  "schemaVersion": 19
+}

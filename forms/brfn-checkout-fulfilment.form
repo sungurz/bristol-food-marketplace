@@ -1,0 +1,91 @@
+{
+  "components": [
+    {
+      "text": "### Choose delivery or collection\nEach producer in your order prepares their part separately. For each one, choose delivery or collection and a date and time. Producers need at least 48 hours to prepare, so choose a time at least 48 hours from now.",
+      "type": "text",
+      "layout": {
+        "row": "Row_0qvjs8g",
+        "columns": null
+      },
+      "id": "Field_0oropll"
+    },
+    {
+      "label": "Your producers",
+      "components": [
+        {
+          "label": "Producer",
+          "type": "textfield",
+          "layout": {
+            "row": "Row_1nm1q39",
+            "columns": null
+          },
+          "id": "Field_0hsejzq",
+          "key": "producerId",
+          "readonly": true
+        },
+        {
+          "label": "Delivery or collection",
+          "values": [
+            {
+              "label": "Delivery",
+              "value": "delivery"
+            },
+            {
+              "label": "Collection",
+              "value": "collection"
+            }
+          ],
+          "type": "radio",
+          "layout": {
+            "row": "Row_1enev8t",
+            "columns": null
+          },
+          "id": "Field_1xxkc8v",
+          "key": "fulfilmentMethod",
+          "validate": {
+            "required": true
+          }
+        },
+        {
+          "subtype": "datetime",
+          "dateLabel": "Date and time",
+          "type": "datetime",
+          "layout": {
+            "row": "Row_0yhxpiu",
+            "columns": null
+          },
+          "id": "Field_1mfb1xi",
+          "key": "scheduledFor",
+          "timeLabel": "Time",
+          "timeSerializingFormat": "utc_normalized",
+          "timeInterval": 15,
+          "validate": {
+            "required": true
+          },
+          "disallowPassedDates": true,
+          "use24h": true
+        }
+      ],
+      "showOutline": true,
+      "isRepeating": true,
+      "allowAddRemove": false,
+      "defaultRepetitions": 1,
+      "type": "dynamiclist",
+      "layout": {
+        "row": "Row_1qax3nf",
+        "columns": null
+      },
+      "id": "Field_1b73hq1",
+      "path": "fulfilmentSelections"
+    }
+  ],
+  "type": "default",
+  "id": "brfn-checkout-fulfilment",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.10.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.52.0"
+  },
+  "schemaVersion": 19
+}
