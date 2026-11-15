@@ -1,0 +1,33 @@
+{
+  "components": [
+    {
+      "text": "We couldn't check stock right now. You can try again, or cancel your checkout.",
+      "type": "text",
+      "layout": {
+        "row": "Row_1o2906m",
+        "columns": null
+      },
+      "id": "Field_0oiksj6"
+    },
+    {
+      "label": "Try the stock check again",
+      "type": "checkbox",
+      "layout": {
+        "row": "Row_1s75zs1",
+        "columns": null
+      },
+      "id": "Field_1nn1fpl",
+      "key": "stockRetry",
+      "description": "Leave this unticked to cancel your checkout."
+    }
+  ],
+  "type": "default",
+  "id": "brfn-checkout-stock-recovery",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.10.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.52.0"
+  },
+  "schemaVersion": 19
+}
