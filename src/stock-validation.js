@@ -4,21 +4,10 @@ const productKey = (producerId, productId) => JSON.stringify([producerId, produc
 const result = (errors) => ({ canCheckout: errors.length === 0, errors });
 const error = (code, message, details = {}) => ({ code, message, ...details });
 
-/**
- * @param {{items: Array<{producerId: string, productId: string, quantity: number}>}} basket
- * @param {Array<{producerId: string, productId: string, name?: string,
- *   availableQuantity: number, isAvailable: boolean}>} products
- * @returns {{canCheckout: boolean, errors: Array<object>}}
- */
-export function validateBasket(basket, products) {
-  if (!isRecord(basket) || !Array.isArray(basket.items)) {
-    return result([error('INVALID_BASKET', 'The basket must contain an items list.')]);
-  }
-  if (basket.items.length === 0) {
-    return result([error('EMPTY_BASKET', 'Add at least one product before checkout.')]);
-  }
+/** Return catalogue errors independently of the customer's basket. */
+export function validateStockData(products) {
   if (!Array.isArray(products)) {
-    return result([error('INVALID_STOCK_DATA', 'Product data is missing. Refresh it before checking out.')]);
+    return [error('INVALID_STOCK_DATA', 'Product data is missing. Refresh it before checking out.')];
   }
 
   // Different producers may use the same product ID.
@@ -39,7 +28,22 @@ export function validateBasket(basket, products) {
     }
     catalogue.set(key, product);
   }
+  return errors;
+}
+
+/** Check whole units/packs without reserving or changing inventory. */
+export function validateBasket(basket, products) {
+  if (!isRecord(basket) || !Array.isArray(basket.items)) {
+    return result([error('INVALID_BASKET', 'The basket must contain an items list.')]);
+  }
+  if (basket.items.length === 0) {
+    return result([error('EMPTY_BASKET', 'Add at least one product before checkout.')]);
+  }
+  const errors = validateStockData(products);
   if (errors.length > 0) return result(errors);
+  const catalogue = new Map(products.map((product) => [
+    productKey(product.producerId, product.productId), product,
+  ]));
 
   // Repeated items must be checked using their combined quantity.
   const requested = new Map();
