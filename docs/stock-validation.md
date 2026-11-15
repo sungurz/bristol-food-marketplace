@@ -2,7 +2,7 @@
 
 Issue: [#32 / S2-06](https://github.com/sungurz/bristol-food-marketplace/issues/32)
 
-Checks the availability and quantity of each product in a basket for Use Case 2. The JavaScript code runs locally with sample data. The input/output format still needs agreement in [#31](https://github.com/sungurz/bristol-food-marketplace/issues/31), and the Camunda connection is pending. JavaScript was chosen for this local version; the group has not specified a worker runtime.
+Checks the availability and quantity of every product in a basket for Use Case 2. A complete initial Camunda REST worker and trusted stock loader are now included; see [running the stock worker](stock-worker.md). The implementation uses the published checkout diagram's variable names; [#31](https://github.com/sungurz/bristol-food-marketplace/issues/31) records the group's shared agreement.
 
 ## Run it
 
@@ -30,7 +30,7 @@ The command returns exit code 0 for an allowed basket, 2 for a blocked basket, o
 
 `validateBasket` in `src/stock-validation.js` performs the checks. `validateStockVariables` reads `basket` and `products`, then returns the result under `stockValidation`.
 
-## Input format - pending #31
+## Local function/CLI input format
 
 ```json
 {
@@ -63,7 +63,7 @@ IDs must be non-empty strings and match exactly. Product names are optional. Thi
 
 Use trusted product-service data or server-side sample data for `products`, rather than stock figures supplied by a customer form. `availableQuantity` is the quantity available for checkout; the reservation rule still needs agreement. `isAvailable` comes from the product service and should account for seasonal availability. This function does not calculate availability dates.
 
-## Output format - pending #31
+## Output format
 
 For a valid basket:
 
@@ -87,21 +87,21 @@ Requesting 5 apples when only 3 are available returns false. The error identifie
 | `INSUFFICIENT_STOCK` | Reduce the quantity or remove the item. |
 | `INVALID_STOCK_DATA` | Stock data is missing, malformed or ambiguous. Refresh or fix that data; changing a valid customer basket alone does not fix it. |
 
-## Remaining Camunda work
+## Camunda connection and remaining team work
 
 - Agree the variable names, quantity units, stock source and result format with Ahmet under #31 and Efe's checkout Forms work under #33.
-- Have the chosen Camunda worker or service task call this module using fresh trusted stock data and publish the returned result as a process variable.
+- Run the included `src/camunda-stock-worker.js` with a trusted file or HTTP stock source. It publishes normal results and raises the model's recovery error when the source is unusable.
 - Configure the checkout gateway to continue only when the returned boolean is true. The blocked route must show appropriate errors and require amendment; stock-data failures need an appropriate recovery route.
 - Demonstrate both routes in the actual Camunda process and connect them with the team's order creation and integration work.
 
-Worker registration and BPMN deployment are still pending. The current tests cover the JavaScript component; the group still needs to demonstrate it running inside the process.
+Worker registration, REST protocol handling and isolated engine execution are implemented and tested: 56 component/protocol checks and 8 real Camunda checks passed. See the [validation record](stock-validation-verification.md). The team's actual Forms, other workers and complete checkout integration remain separate work.
 
 ## Scope and limits
 
 - This component checks stock only. Order creation, order states, payments, commission, stock reservation/deduction and notifications are separate work.
 - The checkout model and Forms cover the 48-hour preparation rule. Inventory deduction and producer notifications follow successful payment in the agreed backlog.
 - The stock snapshot may change after validation. Concurrent purchasing, reservations, locking and a later stock recheck require the team's agreed rule and the Sprint 3 stock-handling work. This initial check does not guarantee stock will still be available at payment time.
-- Completing #32 requires integration and a demonstration of the actual Camunda flow.
+- The included worker has been demonstrated in an isolated Camunda flow with the checkout model's stock contract. The team's full Form/order/payment journey still needs integration and demonstration.
 
 ## Requirement references
 

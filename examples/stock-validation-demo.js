@@ -29,4 +29,4 @@ const repeated = structuredClone(sample);
 repeated.basket.items.push({ producerId: 'farm-a', productId: 'apples', quantity: 2 });
 show('5. Repeated apple lines add up to 4, exceeding stock of 3', repeated);
 
-console.log('\nCamunda connection: pending.');
+console.log('\nTo run the Camunda worker: node src/camunda-stock-worker.js');

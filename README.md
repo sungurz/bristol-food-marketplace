@@ -15,6 +15,10 @@ stakeholder and business process analysis, reviewing the group's work,
 and preparing for sprint demonstrations. Each member must understand
 and be able to explain the submitted artefacts.
 
+## Sprint 2 checkout model
+
+The [checkout and order-preparation model](Diagrams/Checkout%20diagram.bpmn), [image preview](Diagrams/Checkout%20diagram.png) and [reading guide](docs/checkout-order-preparation.md) cover issue #29. The guide records validation, connection settings, remaining integration work and contribution information. This model is separate from the stock-validation code in PR #42.
+
 ## Project management approach
 
 We use Scrum with GitHub Projects to organise work into sprints.
@@ -57,4 +61,4 @@ and signed by all members before submission through the repository.
 
 ## Initial stock validation
 
-The [stock-validation guide](docs/stock-validation.md) explains the initial component for Sprint 2 issue #32, its proposed data format and the remaining Camunda integration work. Run `node --test` for component tests or `node examples/stock-validation-demo.js` for local examples. Node.js 22 or later is required; no extra packages are needed.
+The [stock-worker guide](docs/stock-worker.md) explains the complete initial stock service for issue #32, including its running Camunda worker, trusted file/HTTP stock source and the published checkout model's contract. Run `node --test` for 56 component/protocol checks, `node examples/stock-validation-demo.js` for local examples, or `node src/camunda-stock-worker.js` to start the worker. With an isolated Camunda engine running, `node scripts/check-stock-camunda.js` runs 8 real-engine scenarios. Node.js 22 or later is required; no npm dependencies are needed. The [validation record](docs/stock-validation-verification.md) distinguishes this completed component from the team's remaining Forms/order/payment integration.
