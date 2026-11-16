@@ -1,0 +1,17 @@
+{
+  "name": "brfn-stock-validation",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Initial multi-producer basket stock validation for Sprint 2 issue 32.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "demo": "node examples/stock-validation-demo.js",
+    "validate:stock": "node src/validate-stock-cli.js",
+    "worker:stock": "node src/camunda-stock-worker.js",
+    "test:camunda:stock": "node scripts/check-stock-camunda.js"
+  }
+}

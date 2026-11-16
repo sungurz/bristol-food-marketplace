@@ -58,3 +58,7 @@ explaining their own work.
 
 The Contribution Matrix records actual contributions and is reviewed
 and signed by all members before submission through the repository.
+
+## Initial stock validation
+
+The [stock-worker guide](docs/stock-worker.md) explains the complete initial stock service for issue #32, including its running Camunda worker, trusted file/HTTP stock source and the published checkout model's contract. Run `node --test` for 56 component/protocol checks, `node examples/stock-validation-demo.js` for local examples, or `node src/camunda-stock-worker.js` to start the worker. With an isolated Camunda engine running, `node scripts/check-stock-camunda.js` runs 8 real-engine scenarios. Node.js 22 or later is required; no npm dependencies are needed. The [validation record](docs/stock-validation-verification.md) distinguishes this completed component from the team's remaining Forms/order/payment integration.

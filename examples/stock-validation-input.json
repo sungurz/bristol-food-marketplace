@@ -1,0 +1,24 @@
+{
+  "basket": {
+    "items": [
+      { "producerId": "farm-a", "productId": "apples", "quantity": 2 },
+      { "producerId": "farm-b", "productId": "bread", "quantity": 1 }
+    ]
+  },
+  "products": [
+    {
+      "producerId": "farm-a",
+      "productId": "apples",
+      "name": "Apples",
+      "availableQuantity": 3,
+      "isAvailable": true
+    },
+    {
+      "producerId": "farm-b",
+      "productId": "bread",
+      "name": "Bread",
+      "availableQuantity": 4,
+      "isAvailable": true
+    }
+  ]
+}
