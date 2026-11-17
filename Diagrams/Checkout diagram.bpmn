@@ -181,7 +181,7 @@
       <bpmn:documentation>Expanded embedded subprocess, entered only after a valid basket, valid fulfilment and explicit customer confirmation. Create the parent order first, then one linked pending part per unique producer. Completion waits for every producer part. Worker retries must be idempotent: parent keyed by checkoutId; producer part by orderId and producerId. No stock deduction or producer notification occurs here. Technical failures pause/retry or create an incident and cannot proceed to the payment handoff.</bpmn:documentation>
       <bpmn:incoming>Flow_HandmadeConfirm</bpmn:incoming><bpmn:outgoing>Flow_02cstwl</bpmn:outgoing>
       <bpmn:serviceTask id="Activity_0yq03z4" name="Make main order&#10;Waiting for payment">
-        <bpmn:documentation>Create or return the existing overall order for checkoutId using the confirmed basket, trusted quote, customer and fulfilment data. Return orderId and orderState representing awaiting payment. The exact state identifier is a reference convention to agree in issue 31; no successful payment is implied.</bpmn:documentation>
+        <bpmn:documentation>Create or return the existing overall order for checkoutId using the confirmed basket, trusted quote, customer and fulfilment data. Return orderId and orderStatus = "awaiting_payment". No successful payment is implied.</bpmn:documentation>
         <bpmn:extensionElements>
           <zeebe:taskDefinition type="create-marketplace-order" retries="3"/>
         </bpmn:extensionElements>
