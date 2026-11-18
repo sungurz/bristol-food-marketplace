@@ -12,7 +12,9 @@ This file records how we tested the first version of the checkout (Functionality
 | --- | --- |
 | Four checkout forms (`forms/`) | Opened in the Camunda Modeler 5.52 form preview with sample data from `examples/` (see section 3). The same checks were also run in the form-js 2.0.2 renderer, which Modeler 5.52 uses. |
 | Checkout routing in Camunda 8 Run 8.10 | Done in the Sprint 2 group review on 17 November 2026, using a test copy of the checkout BPMN and the real forms (section 4). |
-| Workers (stock, fulfilment preparation, order creation, commission) | Automated tests: `node --test` from the repository root (section 5). |
+| Workers (stock, fulfilment preparation, fulfilment validation, order creation, commission) | Automated tests: `node --test` from the repository root (section 5). |
+| 48-hour rule and producer options | `npm run demo:validate-fulfilment` and the worker tests (TC12, TC14, TC15). |
+| Two-producer order, payment and commission | Ahmet's S2-11 integration run in Camunda (section 4). |
 
 All data is sample data. No real customers, producers or payments are used.
 
@@ -31,8 +33,10 @@ All data is sample data. No real customers, producers or payments are used.
 | TC9 | Rejected choice is explained | `fulfilmentValidation.errors` contains a 48-hour problem | The message is shown at the top of the fulfilment form | Pass (form only) |
 | TC10 | Review before confirming | Two producers, total 1600 pence | Review form shows items, prices, "Total to pay: £16.00" and the delivery choices | Pass |
 | TC11 | Review decision | Choose confirm, change or cancel | `checkoutDecision` is `confirm`, `amend` or `cancel` | Pass |
-| TC12 | 48-hour rule is enforced | Choose a time 24 hours ahead | Checkout sends the customer back to the fulfilment form | **Not tested yet:** `validate-fulfilment` is not implemented |
-| TC13 | Full multi-producer purchase | Two producers, valid choices, confirm, approved test payment | Order is created and the payment process starts | **Not tested yet:** `validate-fulfilment` and the checkout-to-payment handoff (#37) are missing |
+| TC12 | 48-hour rule rejects an early time | farm-a delivery 24 hours ahead | `isValid` is false; message "Producers need at least 48 hours to prepare…"; customer goes back to the fulfilment form | Pass (worker test and demo) |
+| TC13 | Successful multi-producer purchase | Two producers (£16.00), confirmed checkout, approved test payment | Main order and two producer orders created; payment succeeds; 80p commission | **Partly passed:** passed in Ahmet's S2-11 run, which starts after checkout is confirmed. The run from the checkout forms is not recorded yet. |
+| TC14 | 48-hour rule accepts a valid time | Both producers 72 hours ahead | `isValid` is true; checkout continues to the review form | Pass (worker test and demo) |
+| TC15 | Producer only offers collection | farm-b delivery 72 hours ahead | `isValid` is false; message "Delivery is not offered by this producer. Choose collection." | Pass (worker test and demo) |
 
 ## 3. Sample data for the form preview
 
@@ -70,11 +74,22 @@ The Sprint 2 group review (17 November 2026) deployed the checkout BPMN and the 
 
 These runs used the forms as they were before the fixes in section 6. The fixes did not change any form ID or key, so the routing is the same.
 
+Ahmet's S2-11 integration run (18 November 2026, `docs/s2-11-integration.md`) used two demo processes connected by a call activity. It started from a confirmed checkout with two producers:
+
+| Result | Value |
+| --- | --- |
+| Producer orders | 2 (farm-a delivery, farm-b collection) |
+| Total | £16.00 |
+| Simulated payment | Succeeded |
+| Commission | £0.80 (farm-a payout £11.40, farm-b payout £3.80) |
+
+The order status stays `awaiting_payment` after payment; this is recorded as a follow-up in that document.
+
 ## 5. Automated tests
 
 Command: `node --test` from the repository root.
 
-Result on 18 November 2026: **131 tests, 131 passed, 0 failed.** They cover stock validation, the stock worker, fulfilment preparation, order creation, the order store and the commission calculation. They do not cover the whole journey from basket to payment.
+Result on 18 November 2026: **143 tests, 143 passed, 0 failed.** They cover stock validation, the stock worker, fulfilment preparation, fulfilment validation (12 new tests), order creation, the order store and the commission calculation. They do not cover the whole journey from basket to payment.
 
 ## 6. Problems found and fixed
 
@@ -85,10 +100,13 @@ The group review found these problems in the forms. They were fixed in #33:
 - Amend form accepted 1.5 as a quantity, and an empty "Add new" row could be submitted.
 - Fulfilment form offered delivery to producers that only offer collection, and could not show rejection messages.
 
+The review also found that the 48-hour check was missing. It was added as the `validate-fulfilment` worker (`docs/validate-fulfilment.md`).
+
 ## 7. Known limitations
 
 - **Adding products during amend:** Camunda uses one setting for both adding and removing rows. We need removing, so "Add new" is still visible. An empty row cannot be submitted, and the form tells the customer to go back to the shop to add a different product.
-- **48-hour rule:** the forms explain the rule, but only `validate-fulfilment` can enforce it with the server's clock. It is not written yet (TC12).
-- **Full purchase:** TC13 needs `validate-fulfilment` and the payment handoff (#37). Planned for Sprint 3.
+- **48-hour rule in Camunda:** `validate-fulfilment` now enforces the rule (TC12, TC14, TC15), but a run of it in a live Camunda engine is not recorded yet.
+- **Full purchase:** TC13 passed from a confirmed checkout. Running it from the checkout forms needs the checkout-to-payment handoff (#37). Planned for Sprint 3.
+- **Empty basket:** if the customer removes every item in the amend form, there is no cancel option there. The stock check returns `EMPTY_BASKET` and the form appears again. Planned for Sprint 3.
 - **Names:** forms show IDs such as `farm-a` and `apples`, not display names.
 

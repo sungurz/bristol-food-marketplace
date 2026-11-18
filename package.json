@@ -12,6 +12,8 @@
     "demo": "node examples/stock-validation-demo.js",
     "validate:stock": "node src/validate-stock-cli.js",
     "worker:stock": "node src/camunda-stock-worker.js",
-    "test:camunda:stock": "node scripts/check-stock-camunda.js"
+    "test:camunda:stock": "node scripts/check-stock-camunda.js",
+    "worker:validate-fulfilment": "node src/camunda-validate-fulfilment-worker.js",
+    "demo:validate-fulfilment": "node examples/validate-fulfilment-demo.js"
   }
 }
