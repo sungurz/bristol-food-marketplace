@@ -8,10 +8,10 @@ Our checkout and payment processes are built by different people, in different m
 
 This document is the one place where we agree those names: what each variable is called, what values it can hold, which states an order moves through, and what is passed along at each handover.
 
-It covers Use Case 2, as split in the [functional scope](two-major-functionalities-scope.md):
+It covers Use Case 2, as split in the [functional scope](../two-major-functionalities-scope.md):
 
-- **Functionality A – Checkout and order creation.** [Checkout diagram](../Diagrams/Checkout%20diagram.bpmn) (#29).
-- **Functionality B – Payment and commission.** [S2-04 model](../Diagrams/S2-04_Payment_and_Order_Confirmation_Operational.bpmn) (#30) and [S2-09 test payment](../Diagrams/s2-09-test-payment.bpmn) (#35).
+- **Functionality A – Checkout and order creation.** [Checkout diagram](../../Diagrams/Checkout%20diagram.bpmn) (#29).
+- **Functionality B – Payment and commission.** [S2-04 model](../../Diagrams/S2-04_Payment_and_Order_Confirmation_Operational.bpmn) (#30) and [S2-09 test payment](../../Diagrams/s2-09-test-payment.bpmn) (#35).
 
 ### How this document is organised
 
@@ -38,17 +38,19 @@ In the tables, the "Status" column says **In use** when a committed model or wor
 | Dates and times use ISO 8601 in UTC. | `2026-11-19T10:00:00Z` |
 | Yes/no values are real booleans. | `retryPayment = true` |
 | Each idea has one name. The payment result is `paymentStatus`, never `paymentOutcome` or `paymentResult`. | |
+| The overall order state uses `orderStatus`, never `orderState`. Each producer's own state uses `producerOrderStatus`. | `orderStatus: "awaiting_payment"` |
 | All sample data is made up. No real names, addresses or card details appear in variables, Forms or examples. | `customerId: "CUS-205"` |
 
 ## 2. Variable dictionary
 
-"Written by" is the only step allowed to set a variable. Everything under "Read by" may use it but must not change it.
+"Written by" names the authorised writer or writers and, where more than one is listed, which stage each may update. Everything under "Read by" may use the variable but must not change it unless also named as a writer.
 
 ### 2.1 Checkout and order creation (Functionality A)
 
 | Variable | Type | What it means and what it may hold | Written by | Read by | Status |
 |---|---|---|---|---|---|
 | `customerId` | String | The customer placing the order. | Checkout start | Order creation, notifications | To add |
+| `checkoutId` | String | Unique, stable identifier for one checkout. Created before any order exists; unchanged across basket amendments and technical retries. A new checkout gets a new ID. Never supplied or edited by a Form. | Trusted checkout start | `create-marketplace-order`, order-creation records, integration audit | To add (named in BPMN documentation; no implementation) |
 | `basket` | Object | The customer's basket. Holds `items`. | Checkout start; Form `brfn-checkout-amend` | `validate-stock`, `prepare-fulfilment` | In use |
 | `basket.items[]` | List | One row per product: `producerId`, `productId`, `quantity`. Never empty. | Same as `basket` | Same as `basket` | In use |
 | `producerId` | String | A producer, e.g. `farm-a`. | Product catalogue | Every process | In use |
@@ -59,18 +61,38 @@ In the tables, the "Status" column says **In use** when a committed model or wor
 | `stockValidation.errors[].code` | String | Why an item failed: `EMPTY_BASKET`, `INVALID_BASKET`, `INVALID_ITEM`, `INVALID_QUANTITY`, `PRODUCT_NOT_FOUND`, `PRODUCT_UNAVAILABLE`, `INSUFFICIENT_STOCK`, `INVALID_STOCK_DATA`. | `validate-stock` | Amend Form | In use |
 | `stockRetry` | Boolean | The customer's choice when the stock service is down. True means try again; anything else cancels. | Form `brfn-checkout-stock-recovery` | Gateway "Try again?" | In use |
 | `producers` | List | The producers in this basket, each appearing once, with their items and the fulfilment methods they offer. | `prepare-fulfilment` | Fulfilment Form; order-creation loop | In use (contents to agree with #33) |
+| `fulfilmentOptions` | List | One entry for every unique producer in the current basket: `producerId` and nonempty `supportedMethods[]` containing `delivery`, `collection` or both. Options come from trusted producer data, never customer input. | `prepare-fulfilment` | Fulfilment Form, `validate-fulfilment` | To add (demonstration values proposed; worker not implemented) |
+| `orderQuote` | Object | Trusted, display-only quote for the current basket: `currency` (`GBP`), `items[]` (each with `producerId`, `productId`, `quantity`, `unitPriceInPence`, `lineTotalInPence`) and `totalInPence`. Rebuilt after basket amendments. | `prepare-fulfilment` | Review Form, `create-marketplace-order`, `create-producer-order` | To add (named in BPMN documentation; no quote-producing worker) |
 | `producer` | Object | One entry of `producers` inside the order-creation loop. | Loop | `create-producer-order` | In use |
-| `fulfilmentSelections` | List | The customer's choice for each producer: `producerId`, `fulfilmentMethod`, `scheduledFor`. | Form `brfn-checkout-fulfilment` | `validate-fulfilment`, order creation | In use (contents to agree with #33) |
+| `fulfilmentSelections` | List | The customer's choice for each producer: `producerId`, `fulfilmentMethod`, `scheduledFor`. | `prepare-fulfilment` (initialises one row per unique producer); Form `brfn-checkout-fulfilment` (updates customer selections) | `validate-fulfilment`, order creation | In use (contents to agree with #33) |
 | `fulfilmentMethod` | String | `delivery` or `collection`. | Customer | Order creation, producer notification | To add |
 | `scheduledFor` | Date-time | When the delivery or collection is due. Must be at least 48 hours after the moment `validate-fulfilment` checks it, using the server's clock. | Customer | `validate-fulfilment`, producer | To add |
-| `fulfilmentValidation` | Object | Result of checking the choices and the 48-hour rule: `isValid` and `errors`. | `validate-fulfilment` | Gateway "Are the choices and times OK?" | In use |
+| `fulfilmentValidation` | Object | Result of checking one selection per current producer, whether its method is in that producer's trusted `supportedMethods`, and the 48-hour rule: `isValid` and `errors`. | `validate-fulfilment` | Gateway "Are the choices and times OK?"; fulfilment Form for error messages | In use |
 | `checkoutDecision` | String | The customer's decision on the review Form: `confirm`, `amend` or `cancel`. Anything that is not `confirm` or `amend` counts as cancel. | Form `brfn-checkout-review` | Gateway "What does the customer choose?" | In use |
-| `orderId` | String | The customer's overall order. All customer messages are matched on it. Created once, never replaced on a retry. | `create-marketplace-order` | Every later step | In use |
+| `orderId` | String | The customer's overall order. All customer messages are matched on it. At most one `orderId` may exist for a `checkoutId`; retries return the same order rather than creating another. | `create-marketplace-order` | Every later step | In use |
 | `orderCreatedAt` | Date-time | When the order was created, from the server's clock. | `create-marketplace-order` | Records | To add |
 | `orderStatus` | String | Where the order is in its life. See [section 3.1](#31-overall-order-orderstatus). | Order creation, then the payment process | Every process | To add |
 | `producerOrder` | Object | One producer's share of the order. See section 2.3. | `create-producer-order` | Collected into `producerOrders` | In use |
 | `producerOrders` | List | Every producer's share. One per producer, never empty. | Order-creation loop | Payment, commission, producer notification | In use |
-| `amountInPence` | Integer | The total the customer pays. Equals all `producerSubtotalInPence` added together. | `create-marketplace-order` | Payment request | In use |
+| `amountInPence` | Integer | The total the customer pays. Must equal `orderQuote.totalInPence` and all `producerSubtotalInPence` added together. | `create-marketplace-order` | Payment request | In use |
+
+#### Preparing fulfilment selections
+
+Every time `prepare-fulfilment` runs, including after a customer amends the basket and the new stock check passes, it must derive the unique producers from the **current** basket. It must initialise `fulfilmentSelections` with **exactly one row per producer**, containing that producer's `producerId` and empty customer-editable choices for `fulfilmentMethod` and `scheduledFor`. The producer ID is not editable in the Form. Preparation must also produce `fulfilmentOptions` for those same producers, using trusted producer data as described in section 2.5.
+
+Preparation **replaces** the previous selections array after a basket change; it must not retain a producer removed from the basket or silently reuse choices made for the old basket. The customer then chooses an available method and a valid time for every remaining producer in `brfn-checkout-fulfilment`. `validate-fulfilment` checks all of these choices before checkout can continue. These are agreed responsibilities, not a claim that the missing worker is already implemented.
+
+#### Preparing the trusted order quote
+
+After stock validation passes, `prepare-fulfilment` must read **trusted catalogue prices** for the basket items and write `orderQuote` before the customer reaches the review Form. Each line identifies its producer and product and records a positive whole-unit quantity, a nonnegative integer `unitPriceInPence` and `lineTotalInPence = quantity × unitPriceInPence`. Repeated occurrences of the same producer/product pair in the basket must be combined consistently. `totalInPence` is the sum of every line total, in GBP pence. A missing, invalid or inconsistent trusted price must block preparation rather than be replaced with a price supplied by a Form.
+
+The review Form must show the current quote's products, producers, quantities, prices and total alongside fulfilment selections. The Form can display `orderQuote` but must not write or override it. After a basket amendment, the next successful stock check is followed by a **fresh quote**; old basket lines and totals must not survive. At order creation, the order workers must use or verify the trusted quote so that the overall `amountInPence` and per-producer subtotals agree. These requirements still need worker and Form implementation.
+
+#### Checkout identity and safe retries
+
+The trusted checkout start creates one nonempty, unique `checkoutId` (for example, `CHK-1001` in test data) before stock validation or customer review. It stays the same when the customer amends their basket and when a Camunda job is retried. Cancelling before confirmation leaves a checkout identity but **no `orderId`**. Starting a genuinely new checkout creates a new `checkoutId`.
+
+`create-marketplace-order` must use `checkoutId` as an **idempotency key**: store a durable, unique mapping from `checkoutId` to its created `orderId`. When the same checkout is processed again, the worker returns the existing order rather than inserting another parent order. If a retry supplies conflicting confirmed order data, the worker reports a conflict instead of silently replacing the order. Creating producer orders must also avoid duplicates for the same `orderId` and `producerId`. An in-memory check or process variable alone is not enough to guarantee this across worker restarts. This is a required implementation behaviour, **not yet demonstrated by code**.
 
 ### 2.2 Payment and commission (Functionality B)
 
@@ -108,6 +130,31 @@ This is not a process variable. The stock worker reads it from its own trusted s
 | `availableQuantity` | Integer, zero or more | Units that can be ordered. | In use |
 | `isAvailable` | Boolean | Whether the product can be ordered now, including whether it is in season. | In use |
 | `name` | String, optional | The name shown to customers. | In use |
+| `unitPriceInPence` | Nonnegative integer | The catalogue's trusted selling price for one unit, used to build `orderQuote`. Never taken from a customer Form. | To add |
+
+The revised demonstration [stock catalogue](../../examples/stock-catalogue.json) contains `unitPriceInPence`: **600p per apple at `farm-a`** and **400p per bread at `farm-b`**. Ensure that this revised file, rather than the older stock-only version, is copied into the repository. These are test prices from the trusted example data, not customer Form values. The missing `prepare-fulfilment` worker must still read them to produce `orderQuote`.
+
+### 2.5 Trusted producer fulfilment options
+
+Producer-specific fulfilment availability is business data, not a value the customer is allowed to set. A trusted producer configuration must supply one record per `producerId`, with a nonempty `supportedMethods[]` array whose only allowed values are `delivery` and `collection`. `prepare-fulfilment` copies the relevant records into the process variable `fulfilmentOptions` for the producers in the current basket. If any producer has no trusted options, preparation must not guess that both methods are available; it should report the missing configuration.
+
+The [producer fulfilment options file](../../examples/producer-fulfilment-options.json) defines the methods separately from product stock, with one record per producer. For the simulated Use Case 2 demonstration, Ahmet proposes the following configuration, pending confirmation with Efe and Kaan:
+
+| Demonstration producer | Supported methods | Reason for the example |
+|---|---|---|
+| `farm-a` (apples) | `delivery`, `collection` | Shows a producer offering the customer a choice. |
+| `farm-b` (bread) | `collection` only | Demonstrates that unsupported delivery must be rejected. |
+
+The proposed trusted producer records, in the same shape as the `fulfilmentOptions` process variable, are:
+
+```json
+[
+  { "producerId": "farm-a", "supportedMethods": ["delivery", "collection"] },
+  { "producerId": "farm-b", "supportedMethods": ["collection"] }
+]
+```
+
+This is **test data, not a factual claim about real farms**, and it agrees with the successful two-producer example in section 5.1 (`farm-a` delivery, `farm-b` collection). The separate JSON file is now prepared as the trusted demonstration source, but `prepare-fulfilment` must still be implemented to load it. A submitted `delivery` choice for `farm-b` must fail server validation. Efe's current form displays both radio options for every producer, so the form and Ahmet's `validate-fulfilment` worker still need to handle unsupported choices and understandable rejection messages. The server must reject unsupported methods even when a Form offers them.
 
 ## 3. States
 
@@ -131,7 +178,7 @@ stateDiagram-v2
     cancelled --> [*]
 ```
 
-- **There is no order until the customer confirms.** Cancelling during checkout simply ends the process. No `orderId` exists, so there is no "draft" or "failed" state.
+- **There is no order until the customer confirms.** Cancelling during checkout simply ends the process. A `checkoutId` may exist, but no `orderId` exists, so there is no "draft" or "failed" order state.
 - **A declined payment leaves the order alone.** It stays `awaiting_payment` until the customer pays or cancels.
 - **A confirmed order cannot be cancelled.** The functional scope (#13) puts refunds and cancelling a paid order out of scope.
 - **Fulfilment states come later.** Preparing, ready and completed will be defined under S3-03.
@@ -182,12 +229,12 @@ Each row is a point where one participant or process passes work to another.
 
 | # | Trigger | From → To | Carried by | Data sent | If it works | If it does not |
 |---|---|---|---|---|---|---|
-| 1 | Customer starts checkout | Customer → Checkout process | Process start | `customerId`, `basket` | The process starts. | — |
+| 1 | Customer starts checkout | Customer → Checkout process | Process start / trusted checkout initiator | `customerId`, `basket`; a unique `checkoutId` is created once | The process starts with a stable `checkoutId`. | — |
 | 2 | Checkout starts, or the basket is changed | Checkout → Stock service | Job `validate-stock` | `basket` | `stockValidation.canCheckout = true` | `false` with `errors`: the customer changes the basket. Service down: `STOCK_CHECK_UNAVAILABLE`, then `stockRetry`. |
-| 3 | Stock is approved | Checkout → Fulfilment preparation | Job `prepare-fulfilment` | `basket` | `producers` | Incident after retries. |
-| 4 | Customer chooses arrangements | Customer → Checkout | Form `brfn-checkout-fulfilment`, then job `validate-fulfilment` | `fulfilmentSelections` | `fulfilmentValidation.isValid = true` | `false`: the customer changes their choices. |
-| 5 | Customer reviews the order | Customer → Checkout | Form `brfn-checkout-review` | `checkoutDecision` | `confirm`: orders are created. | `amend`: back to the stock check. `cancel`: the process ends, no order. |
-| 6 | Customer confirms | Checkout → Order service | Jobs `create-marketplace-order`, then `create-producer-order` per `producer` | `customerId`, `basket`, `fulfilmentSelections`; per producer, `orderId` and `producer` | `orderId`, `orderCreatedAt`, `orderStatus = "awaiting_payment"`, `amountInPence`, `producerOrders` | Incident. |
+| 3 | Stock is approved | Checkout → Fulfilment preparation | Job `prepare-fulfilment` | Current `basket`, trusted producer configuration and trusted catalogue prices | Unique `producers`, their `fulfilmentOptions`, a newly initialised `fulfilmentSelections` row for each, and a fresh `orderQuote`; previous selections and quote are replaced | Incident after retries, including missing options or prices. |
+| 4 | Customer chooses arrangements | Customer → Checkout | Form `brfn-checkout-fulfilment`, then job `validate-fulfilment` | Customer's `fulfilmentSelections`; worker also reads trusted `fulfilmentOptions` | `fulfilmentValidation.isValid = true` only for supported methods and times at least 48 hours ahead | `false`: the customer sees relevant errors and changes their choices. |
+| 5 | Customer reviews the order | Customer → Checkout | Form `brfn-checkout-review` (reads the trusted `orderQuote`) | `checkoutDecision` only; quote is read-only | `confirm`: orders are created after the customer sees items, quantities, prices, total and arrangements. | `amend`: back to the stock check; after any changed basket passes, fulfilment preparation rebuilds selections and quote. `cancel`: the process ends, no order. |
+| 6 | Customer confirms | Checkout → Order service | Jobs `create-marketplace-order`, then `create-producer-order` per `producer` | Stable `checkoutId`, `customerId`, `basket`, trusted `orderQuote`, `fulfilmentSelections`; per producer, `orderId` and `producer` | One persistent parent order per `checkoutId`, `orderCreatedAt`, `orderStatus = "awaiting_payment"`, `amountInPence` equal to the quote total, and unique `producerOrders` whose subtotals reconcile | Retry must return existing orders, not create duplicates; conflicting data causes an incident. |
 | 7 | All producer orders exist | Checkout process → Payment process | Job `handoff-payment`, message `brfn.pending-order-ready` | `orderId`, `customerId`, `amountInPence`, `orderStatus`, `producerOrders` | The payment process starts for this `orderId`. | **Not connected yet; see below.** |
 | 8 | Customer submits a test payment | Customer → Marketplace | Message `PaymentDetails`, matched on `orderId` | `orderId`, `testScenario` | The marketplace creates a `paymentAttemptId`. | — |
 | 9 | Attempt ID is stored | Marketplace → Sandbox provider | "Sandbox payment request" / job `simulate-payment` | `orderId`, `paymentAttemptId`, `amountInPence`, `testScenario` | Message `ProviderResult`, matched on `paymentAttemptId`: `paymentStatus`, `paymentReference`, `paymentProvider` | No reply in 30 seconds: handoff 10. |
@@ -218,11 +265,25 @@ A customer orders two apples from `farm-a`, to be delivered, and one bread from 
 
 Checked by hand: 1200 + 400 = 1600, the amount charged. 60 + 20 = 80, the order's commission. 1140 + 380 + 80 = 1600. Stock afterwards: apples 3 → 1, bread 4 → 3. Both times are three days ahead, well over 48 hours.
 
-These are the process variables at the end of the payment process. The complete file, [order-success.json](examples/order-success.json), adds the stock before and after and the notifications sent.
+Before the review Form, preparation should produce this **trusted quote** from the current basket and catalogue prices (illustrative data; not yet emitted by a worker):
+
+```json
+{
+  "currency": "GBP",
+  "items": [
+    { "producerId": "farm-a", "productId": "apples", "quantity": 2, "unitPriceInPence": 600, "lineTotalInPence": 1200 },
+    { "producerId": "farm-b", "productId": "bread", "quantity": 1, "unitPriceInPence": 400, "lineTotalInPence": 400 }
+  ],
+  "totalInPence": 1600
+}
+```
+
+The larger JSON below shows the process variables at the end of the payment process. The complete file, [order-success.json](order-success.json), adds the stock before and after and the notifications sent.
 
 ```json
 {
   "orderId": "ORD-1001",
+  "checkoutId": "CHK-1001",
   "customerId": "CUS-205",
   "basket": {
     "items": [
@@ -282,6 +343,7 @@ The same basket as order `ORD-1002`, but the sandbox declines the payment. The v
 ```json
 {
   "orderId": "ORD-1002",
+  "checkoutId": "CHK-1002",
   "orderStatus": "awaiting_payment",
   "amountInPence": 1600,
   "testScenario": "decline",
@@ -291,7 +353,7 @@ The same basket as order `ORD-1002`, but the sandbox declines the payment. The v
 }
 ```
 
-Nothing else moves. The order stays open, both producer orders stay `awaiting_payment`, stock is untouched, no commission is calculated and no producer hears about it. The complete file is [payment-failed.json](examples/payment-failed.json).
+Nothing else moves. The order stays open, both producer orders stay `awaiting_payment`, stock is untouched, no commission is calculated and no producer hears about it. The complete file is [payment-failed.json](payment-failed.json).
 
 ### 5.3 Other situations
 
@@ -324,6 +386,41 @@ The acceptance criterion asks that the data is used consistently, not only writt
 | S2-04: gateway "Retry?" | `retryPayment = true` | Yes |
 | S2-04: message matching | `orderId` for customer messages, `paymentAttemptId` for provider replies | Yes |
 | S2-09 worker | Takes `orderId`, `paymentAttemptId`, `amountInPence`; returns `paymentStatus`, `paymentReference`, `paymentProvider` | Yes |
+
+### 6.1 Known model-documentation mismatch: `orderState`
+
+**Canonical choice: `orderStatus`.** Section 2.1, section 3.1, the order-creation handoff in section 4, and both sample outcome files all use `orderStatus` with values such as `awaiting_payment` and `confirmed`. Do not introduce an `orderState` alias.
+
+The published [Checkout diagram](../../Diagrams/Checkout%20diagram.bpmn), in the documentation of its service task **“Make main order – Waiting for payment”** (`create-marketplace-order`), currently says: `Return orderId and orderState representing awaiting payment.` This is a **wording mismatch in the BPMN task documentation**, not evidence of an executable `orderState` mapping.
+
+**Exact correction still needed in the BPMN file:** replace that sentence with `Return orderId and orderStatus = awaiting_payment.` Then ensure the eventual `create-marketplace-order` worker actually outputs `orderStatus` using the agreed values. The diagram and worker have **not** been modified by this document change; this item remains open until Ahmet updates the BPMN and verifies the implementation.
+
+## 7. Planned for Sprint 3
+
+This section describes **remaining work**, not behaviour already demonstrated. Sprint 2 requires initial working automation: the review on 17 November 2026 found no published handlers for `prepare-fulfilment`, `validate-fulfilment`, `create-marketplace-order`, `create-producer-order` or `handoff-payment`, and no working checkout-to-payment handoff. Those initial implementations and a basic multi-producer test must not be mislabelled as finished or postponed merely because Sprint 3 completes the wider behaviour.
+
+| Sprint 3 backlog | Planned completion | Relevant shared data | Owner |
+|---|---|---|---|
+| S3-01 | Handle stock changes between checkout and payment through an agreed recheck or reservation approach. | `basket`, `stockValidation` | Kaan |
+| S3-02 | Complete fulfilment validation, the 48-hour rule, supplier-specific options, user-visible errors, amendment and cancellation flows. | `fulfilmentOptions`, `fulfilmentSelections`, `fulfilmentValidation`, `checkoutDecision` | Efe, coordinating with the fulfilment worker owner |
+| S3-03 | Keep overall and producer order states consistent and prevent duplicate orders on repeated requests. | `checkoutId`, `orderId`, `orderStatus`, `producerOrders` | Ahmet |
+| S3-04 | Complete payment decline, retry, lost-response and service-outage handling without a second charge for the same attempt. | `paymentAttemptId`, `paymentStatus`, `retryPayment`, `paymentReference` | Gokdeniz |
+| S3-05 and S3-06 | Verify commission and payouts; update inventory and send notifications once after successful payment. | `amountInPence`, `commissionTotalInPence`, `producerOrders`, `orderStatus` | Gokdeniz (commission); Kaan (follow-up) |
+| S3-07 and S3-08 | Complete checkout/payment integration and record reproducible successful, declined, shortage and outage tests. | All handoff data in section 4 | Ahmet (integration); Efe (tests) |
+
+Any completed functionality must be supported by published code and recorded test evidence; a BPMN job type, documentation paragraph or sample JSON is not proof of a running worker.
+
+## 8. Open decisions and unresolved interfaces
+
+The following choices still require agreement or implementation checks. The proposed values are **demonstration assumptions**, not real producer facts or claims of completed functionality.
+
+| Item | Current proposal or question | Who needs to confirm / next action | Status |
+|---|---|---|---|
+| Producer delivery/collection options | For the demo, `farm-a` offers both methods and `farm-b` offers collection only (section 2.5). | Efe and Kaan confirm the sample scenario with Ahmet. | Proposed, not yet group-confirmed |
+| Trusted option source | The prepared `examples/producer-fulfilment-options.json` stores one supported-methods list per producer. | Confirm the sample methods with Efe and Kaan; load the file in `prepare-fulfilment`. | Sample data prepared; worker not implemented |
+| Trusted prices | The revised `examples/stock-catalogue.json` supplies apples at 600p and bread at 400p. | Make sure the revised catalogue is in the repository and implement trusted `orderQuote` calculation in `prepare-fulfilment`. | Sample data prepared; quote worker not implemented |
+| Fulfilment error contract and Form display | `validate-fulfilment` must identify the affected producer and explain unsupported methods and times under 48 hours. | Ahmet and Efe agree an `errors[]` shape and show its messages in the Form. | To agree and implement |
+| Durable order idempotency | Use `checkoutId` for the parent and `(orderId, producerId)` for producer orders, with persistent duplicate protection. | Ahmet chooses and tests durable storage/uniqueness; Form data cannot choose IDs. | Contract defined; worker not implemented |
 
 
 

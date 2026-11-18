@@ -1,0 +1,110 @@
+{
+  "scenario": "payment-failed",
+  "description": "The same basket as order-success.json, but the sandbox provider declines the payment. The order stays open so the customer can retry or cancel. Nothing is confirmed, deducted or sent to producers.",
+  "stage": "Payment process after 'Notify customer payment was declined', waiting at 'Wait for customer action'",
+  "variables": {
+    "orderId": "ORD-1002",
+    "checkoutId": "CHK-1002",
+    "customerId": "CUS-205",
+    "basket": {
+      "items": [
+        { "producerId": "farm-a", "productId": "apples", "quantity": 2 },
+        { "producerId": "farm-b", "productId": "bread", "quantity": 1 }
+      ]
+    },
+    "stockValidation": { "canCheckout": true, "errors": [] },
+    "fulfilmentOptions": [
+      { "producerId": "farm-a", "supportedMethods": ["delivery", "collection"] },
+      { "producerId": "farm-b", "supportedMethods": ["collection"] }
+    ],
+    "fulfilmentSelections": [
+      { "producerId": "farm-a", "fulfilmentMethod": "delivery", "scheduledFor": "2026-11-19T11:00:00Z" },
+      { "producerId": "farm-b", "fulfilmentMethod": "collection", "scheduledFor": "2026-11-19T14:00:00Z" }
+    ],
+    "fulfilmentValidation": { "isValid": true, "errors": [] },
+    "orderQuote": {
+      "currency": "GBP",
+      "items": [
+        { "producerId": "farm-a", "productId": "apples", "quantity": 2, "unitPriceInPence": 600, "lineTotalInPence": 1200 },
+        { "producerId": "farm-b", "productId": "bread", "quantity": 1, "unitPriceInPence": 400, "lineTotalInPence": 400 }
+      ],
+      "totalInPence": 1600
+    },
+    "checkoutDecision": "confirm",
+    "orderCreatedAt": "2026-11-16T11:00:00Z",
+    "orderStatus": "awaiting_payment",
+    "amountInPence": 1600,
+    "testScenario": "decline",
+    "paymentAttemptId": "ATTEMPT-1002-1",
+    "paymentStatus": "declined",
+    "paymentReference": null,
+    "paymentProvider": "simulated",
+    "producerOrders": [
+      {
+        "producerOrderId": "PO-1002-A",
+        "orderId": "ORD-1002",
+        "producerId": "farm-a",
+        "producerOrderStatus": "awaiting_payment",
+        "fulfilmentMethod": "delivery",
+        "scheduledFor": "2026-11-19T11:00:00Z",
+        "items": [{"productId": "apples", "quantity": 2, "unitPriceInPence": 600, "lineTotalInPence": 1200}],
+        "producerSubtotalInPence": 1200
+      },
+      {
+        "producerOrderId": "PO-1002-B",
+        "orderId": "ORD-1002",
+        "producerId": "farm-b",
+        "producerOrderStatus": "awaiting_payment",
+        "fulfilmentMethod": "collection",
+        "scheduledFor": "2026-11-19T14:00:00Z",
+        "items": [{"productId": "bread", "quantity": 1, "unitPriceInPence": 400, "lineTotalInPence": 400}],
+        "producerSubtotalInPence": 400
+      }
+    ]
+  },
+  "stock": {
+    "before": [
+      {
+        "producerId": "farm-a",
+        "productId": "apples",
+        "name": "Apples",
+        "availableQuantity": 3,
+        "isAvailable": true
+      },
+      {
+        "producerId": "farm-b",
+        "productId": "bread",
+        "name": "Bread",
+        "availableQuantity": 4,
+        "isAvailable": true
+      }
+    ],
+    "after": [
+      {
+        "producerId": "farm-a",
+        "productId": "apples",
+        "name": "Apples",
+        "availableQuantity": 3,
+        "isAvailable": true
+      },
+      {
+        "producerId": "farm-b",
+        "productId": "bread",
+        "name": "Bread",
+        "availableQuantity": 4,
+        "isAvailable": true
+      }
+    ]
+  },
+  "notifications": { "customerDeclineSent": true, "customerConfirmationSent": false, "producerOrdersSent": [] },
+  "nextSteps": {
+    "ifCustomerRetries": {
+      "retryPayment": true,
+      "result": "A new paymentAttemptId (ATTEMPT-1002-2) is created. orderId and producerOrders are unchanged; no second order is created."
+    },
+    "ifCustomerCancels": {
+      "retryPayment": false,
+      "result": "orderStatus and every producerOrderStatus become 'cancelled'. Nothing was deducted or charged, so there is no stock to restore and nothing to refund."
+    }
+  }
+}

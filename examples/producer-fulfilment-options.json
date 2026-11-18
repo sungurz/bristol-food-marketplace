@@ -1,0 +1,10 @@
+[
+  {
+    "producerId": "farm-a",
+    "supportedMethods": ["delivery", "collection"]
+  },
+  {
+    "producerId": "farm-b",
+    "supportedMethods": ["collection"]
+  }
+]
