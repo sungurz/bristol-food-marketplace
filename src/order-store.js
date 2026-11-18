@@ -16,7 +16,7 @@ export function createFileStore({ directory } = {}) {
     if (typeof key !== 'string' || !key.trim()) {
       throw new TypeError('An order-store key must be a non-empty string.');
     }
-    // Hashing keeps checkout/order IDs out of filenames and prevents path traversal.
+  
     return join(root, `${createHash('sha256').update(key).digest('hex')}.json`);
   };
 
