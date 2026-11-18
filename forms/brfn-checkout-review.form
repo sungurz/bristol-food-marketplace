@@ -11,9 +11,54 @@
     },
     {
       "type": "table",
+      "id": "Field_review_items",
+      "label": "Your items",
+      "dataSource": "=orderQuote.items",
+      "rowCount": 10,
+      "layout": {
+        "row": "Row_review_items",
+        "columns": null
+      },
+      "columns": [
+        {
+          "label": "Producer",
+          "key": "producerId"
+        },
+        {
+          "label": "Product",
+          "key": "productId"
+        },
+        {
+          "label": "Quantity",
+          "key": "quantity"
+        },
+        {
+          "label": "Price each (pence)",
+          "key": "unitPriceInPence"
+        },
+        {
+          "label": "Line total (pence)",
+          "key": "lineTotalInPence"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "Field_review_total",
+      "text": "=\"**Total to pay: \u00a3\" + string(floor(orderQuote.totalInPence / 100)) + \".\" + (if modulo(orderQuote.totalInPence, 100) < 10 then \"0\" else \"\") + string(modulo(orderQuote.totalInPence, 100)) + \"**\"",
+      "conditional": {
+        "hide": "=orderQuote.totalInPence = null"
+      },
+      "layout": {
+        "row": "Row_review_total",
+        "columns": null
+      }
+    },
+    {
+      "type": "table",
       "layout": {
         "row": "Row_1rcio8e",
-        "columns": 3
+        "columns": null
       },
       "label": "Your delivery and collection choices",
       "dataSource": "=fulfilmentSelections",

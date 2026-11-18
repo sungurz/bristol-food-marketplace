@@ -1,7 +1,7 @@
 {
   "components": [
     {
-      "text": "### Some items need changing \nWe can not fill your basket as it is. Check the problems below, change the quantities, then continue. We will check stock again.",
+      "text": "### Some items need changing\nWe can not fill your basket as it is. Check the problems below, then change the quantity or remove the item with \u00d7. We will check stock again.\n\nTo add a different product, cancel checkout and go back to the shop.",
       "type": "text",
       "layout": {
         "row": "Row_0fj2v3e",
@@ -19,8 +19,16 @@
       "rowCount": 10,
       "columns": [
         {
+          "label": "Product",
+          "key": "productId"
+        },
+        {
+          "label": "Producer",
+          "key": "producerId"
+        },
+        {
           "label": "Problem",
-          "key": "code"
+          "key": "message"
         }
       ],
       "id": "Field_10292a6",
@@ -38,7 +46,10 @@
           },
           "id": "Field_0iu4xa1",
           "key": "producerId",
-          "readonly": true
+          "readonly": true,
+          "validate": {
+            "required": true
+          }
         },
         {
           "label": "Product",
@@ -49,7 +60,10 @@
           },
           "id": "Field_0za4wht",
           "key": "productId",
-          "readonly": true
+          "readonly": true,
+          "validate": {
+            "required": true
+          }
         },
         {
           "label": "Quantity",
@@ -63,7 +77,10 @@
           "validate": {
             "required": true,
             "min": "1"
-          }
+          },
+          "decimalDigits": 0,
+          "increment": "1",
+          "description": "Whole numbers only."
         }
       ],
       "showOutline": true,

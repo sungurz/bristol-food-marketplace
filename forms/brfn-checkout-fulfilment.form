@@ -10,6 +10,30 @@
       "id": "Field_0oropll"
     },
     {
+      "type": "table",
+      "id": "Field_fulfil_errors",
+      "label": "Please fix these choices",
+      "dataSource": "=fulfilmentValidation.errors",
+      "rowCount": 10,
+      "conditional": {
+        "hide": "=fulfilmentValidation.errors = null or count(fulfilmentValidation.errors) = 0"
+      },
+      "layout": {
+        "row": "Row_fulfil_errors",
+        "columns": null
+      },
+      "columns": [
+        {
+          "label": "Producer",
+          "key": "producerId"
+        },
+        {
+          "label": "Problem",
+          "key": "message"
+        }
+      ]
+    },
+    {
       "label": "Your producers",
       "components": [
         {
@@ -25,16 +49,6 @@
         },
         {
           "label": "Delivery or collection",
-          "values": [
-            {
-              "label": "Delivery",
-              "value": "delivery"
-            },
-            {
-              "label": "Collection",
-              "value": "collection"
-            }
-          ],
           "type": "radio",
           "layout": {
             "row": "Row_1enev8t",
@@ -44,7 +58,8 @@
           "key": "fulfilmentMethod",
           "validate": {
             "required": true
-          }
+          },
+          "valuesExpression": "=for m in (if fulfilmentOptions = null then [\"delivery\", \"collection\"] else flatten(fulfilmentOptions[producerId = this.producerId].supportedMethods)) return {label: if m = \"delivery\" then \"Delivery\" else \"Collection\", value: m}"
         },
         {
           "subtype": "datetime",
