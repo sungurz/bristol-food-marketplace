@@ -1,0 +1,81 @@
+{
+  "components": [
+    {
+      "label": "Payment method",
+      "values": [
+        {
+          "label": "Sandbox payment",
+          "value": "sandbox"
+        }
+      ],
+      "type": "select",
+      "layout": {
+        "row": "Row_0bn7mfd",
+        "columns": null
+      },
+      "id": "Field_0hrhc7d",
+      "key": "paymentMethod",
+      "defaultValue": "sandbox"
+    },
+    {
+      "label": "Test card",
+      "description": "Choose a simulated card for this test.",
+      "values": [
+        {
+          "label": "Valid test card",
+          "value": "test-card-valid"
+        },
+        {
+          "label": "Invalid test card",
+          "value": "test-card-invalid"
+        }
+      ],
+      "type": "select",
+      "layout": {
+        "row": "Row_TestCard",
+        "columns": null
+      },
+      "id": "Field_TestCard",
+      "key": "testCardToken",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "label": "Payment scenario",
+      "values": [
+        {
+          "label": "Approve",
+          "value": "approve"
+        },
+        {
+          "label": "Decline",
+          "value": "decline"
+        },
+        {
+          "label": "Simulate outage",
+          "value": "outage"
+        }
+      ],
+      "type": "select",
+      "layout": {
+        "row": "Row_PaymentScenario",
+        "columns": null
+      },
+      "id": "Field_PaymentScenario",
+      "key": "testScenario",
+      "validate": {
+        "required": true
+      }
+    }
+  ],
+  "type": "default",
+  "id": "Form_08p6hm6",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.10.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.52.0"
+  },
+  "schemaVersion": 19
+}

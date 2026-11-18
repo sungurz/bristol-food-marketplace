@@ -1,0 +1,24 @@
+{
+  "components": [
+    {
+      "label": "Retry payment",
+      "type": "checkbox",
+      "layout": {
+        "row": "Row_02e3dqh",
+        "columns": null
+      },
+      "id": "Field_1fv2vh5",
+      "key": "retryPayment",
+      "description": "Check to retry. Leave unchecked to cancel."
+    }
+  ],
+  "type": "default",
+  "id": "Form_043mt49",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.10.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.52.0"
+  },
+  "schemaVersion": 19
+}

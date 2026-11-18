@@ -1,0 +1,22 @@
+{
+  "components": [
+    {
+      "text": "Your order has been confirmed.",
+      "type": "text",
+      "layout": {
+        "row": "Row_1fnw3hg",
+        "columns": null
+      },
+      "id": "Field_0grcr3x"
+    }
+  ],
+  "type": "default",
+  "id": "Form_0ktidhg",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.10.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.52.0"
+  },
+  "schemaVersion": 19
+}
