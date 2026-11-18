@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+                  id="Definitions_BRFN_S2_11_Checkout"
+                  targetNamespace="http://brfn.example/s2-11-demo"
+                  exporter="Camunda Modeler"
+                  exporterVersion="5.52.0">
+  <bpmn:process id="brfn_s2_11_checkout_demo_ahmet" name="BRFN S2-11 - Checkout to Payment" isExecutable="true">
+    <bpmn:documentation>Isolated Sprint 2 integration demonstration. Starts from an already confirmed, stock-validated and fulfilment-validated checkout. It does not implement the preceding customer forms or subsequent stock updates. All worker job types are unique to this demonstration.</bpmn:documentation>
+    <bpmn:startEvent id="S211_CheckoutConfirmed" name="Checkout confirmed">
+      <bpmn:outgoing>S211_Flow_Start_Main</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:serviceTask id="S211_CreateMain" name="Create main order&#10;(awaiting payment)">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="brfn-ahmet-s2-11-create-main-order" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>S211_Flow_Start_Main</bpmn:incoming>
+      <bpmn:outgoing>S211_Flow_Main_Producers</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="S211_CreateProducers" name="Create linked producer&#10;orders (parallel)">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="brfn-ahmet-s2-11-create-producer-order" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= orderId" target="orderId" />
+          <zeebe:output source="= producerOrder" target="producerOrder" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>S211_Flow_Main_Producers</bpmn:incoming>
+      <bpmn:outgoing>S211_Flow_Producers_Payment</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="false">
+        <bpmn:extensionElements>
+          <zeebe:loopCharacteristics inputCollection="= producers"
+                                     inputElement="producer"
+                                     outputCollection="producerOrders"
+                                     outputElement="= producerOrder" />
+        </bpmn:extensionElements>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:serviceTask>
+
+    <bpmn:callActivity id="S211_CallPayment" name="Run payment and&#10;commission process">
+      <bpmn:documentation>Invokes a separate executable payment process, copying the orderId, amountInPence, producerOrders and paymentAttemptId and returning payment and commission results to this checkout process.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="brfn_s2_11_payment_demo_ahmet" propagateAllParentVariables="true" propagateAllChildVariables="true" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>S211_Flow_Producers_Payment</bpmn:incoming>
+      <bpmn:outgoing>S211_Flow_Payment_End</bpmn:outgoing>
+    </bpmn:callActivity>
+
+    <bpmn:endEvent id="S211_EndCheckout" name="Payment result&#10;returned">
+      <bpmn:incoming>S211_Flow_Payment_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="S211_Flow_Start_Main" sourceRef="S211_CheckoutConfirmed" targetRef="S211_CreateMain" />
+    <bpmn:sequenceFlow id="S211_Flow_Main_Producers" sourceRef="S211_CreateMain" targetRef="S211_CreateProducers" />
+    <bpmn:sequenceFlow id="S211_Flow_Producers_Payment" sourceRef="S211_CreateProducers" targetRef="S211_CallPayment" />
+    <bpmn:sequenceFlow id="S211_Flow_Payment_End" sourceRef="S211_CallPayment" targetRef="S211_EndCheckout" />
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="S211_CheckoutDiagram">
+    <bpmndi:BPMNPlane id="S211_CheckoutPlane" bpmnElement="brfn_s2_11_checkout_demo_ahmet">
+      <bpmndi:BPMNShape id="S211_Shape_Start" bpmnElement="S211_CheckoutConfirmed">
+        <dc:Bounds x="100" y="182" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S211_Shape_Main" bpmnElement="S211_CreateMain">
+        <dc:Bounds x="205" y="160" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S211_Shape_Producers" bpmnElement="S211_CreateProducers">
+        <dc:Bounds x="445" y="160" width="165" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S211_Shape_Payment" bpmnElement="S211_CallPayment">
+        <dc:Bounds x="705" y="160" width="165" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S211_Shape_End" bpmnElement="S211_EndCheckout">
+        <dc:Bounds x="980" y="182" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="S211_Edge_Start_Main" bpmnElement="S211_Flow_Start_Main">
+        <di:waypoint x="136" y="200" />
+        <di:waypoint x="205" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="S211_Edge_Main_Producers" bpmnElement="S211_Flow_Main_Producers">
+        <di:waypoint x="355" y="200" />
+        <di:waypoint x="445" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="S211_Edge_Producers_Payment" bpmnElement="S211_Flow_Producers_Payment">
+        <di:waypoint x="610" y="200" />
+        <di:waypoint x="705" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="S211_Edge_Payment_End" bpmnElement="S211_Flow_Payment_End">
+        <di:waypoint x="870" y="200" />
+        <di:waypoint x="980" y="200" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

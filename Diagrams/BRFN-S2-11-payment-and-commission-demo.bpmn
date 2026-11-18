@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+                  id="Definitions_BRFN_S2_11_Payment"
+                  targetNamespace="http://brfn.example/s2-11-demo"
+                  exporter="Camunda Modeler"
+                  exporterVersion="5.52.0">
+  <bpmn:process id="brfn_s2_11_payment_demo_ahmet" name="BRFN S2-11 - Payment and Commission" isExecutable="true">
+    <bpmn:documentation>Isolated core-path demonstration of the payment functionality, invoked by the checkout Call Activity. Uses the team's existing simulated-payment and commission functions through demo-only Camunda job aliases. No card data, real charges, order confirmation updates or stock deductions.</bpmn:documentation>
+    <bpmn:startEvent id="S211_PayStart" name="Prepared order&#10;received">
+      <bpmn:outgoing>S211_PayFlow_Start_Simulate</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:serviceTask id="S211_SimulatePayment" name="Submit simulated&#10;payment">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="brfn-ahmet-s2-11-simulate-payment" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>S211_PayFlow_Start_Simulate</bpmn:incoming>
+      <bpmn:outgoing>S211_PayFlow_Simulate_Gateway</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="S211_PaymentResult" name="Payment succeeded?" default="S211_PayFlow_NotSucceeded">
+      <bpmn:incoming>S211_PayFlow_Simulate_Gateway</bpmn:incoming>
+      <bpmn:outgoing>S211_PayFlow_Succeeded</bpmn:outgoing>
+      <bpmn:outgoing>S211_PayFlow_NotSucceeded</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="S211_CalculateCommission" name="Calculate 5% commission&#10;and producer payouts">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="brfn-ahmet-s2-11-calculate-commission" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>S211_PayFlow_Succeeded</bpmn:incoming>
+      <bpmn:outgoing>S211_PayFlow_Commission_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="S211_PayEndSuccess" name="Payment and commission&#10;recorded">
+      <bpmn:incoming>S211_PayFlow_Commission_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="S211_PayEndOther" name="Payment not successful">
+      <bpmn:incoming>S211_PayFlow_NotSucceeded</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="S211_PayFlow_Start_Simulate" sourceRef="S211_PayStart" targetRef="S211_SimulatePayment" />
+    <bpmn:sequenceFlow id="S211_PayFlow_Simulate_Gateway" sourceRef="S211_SimulatePayment" targetRef="S211_PaymentResult" />
+    <bpmn:sequenceFlow id="S211_PayFlow_Succeeded" name="Yes" sourceRef="S211_PaymentResult" targetRef="S211_CalculateCommission">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">= paymentStatus = "succeeded"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="S211_PayFlow_NotSucceeded" name="No" sourceRef="S211_PaymentResult" targetRef="S211_PayEndOther" />
+    <bpmn:sequenceFlow id="S211_PayFlow_Commission_End" sourceRef="S211_CalculateCommission" targetRef="S211_PayEndSuccess" />
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="S211_PaymentDiagram">
+    <bpmndi:BPMNPlane id="S211_PaymentPlane" bpmnElement="brfn_s2_11_payment_demo_ahmet">
+      <bpmndi:BPMNShape id="S211_PayShape_Start" bpmnElement="S211_PayStart">
+        <dc:Bounds x="100" y="182" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S211_PayShape_Simulate" bpmnElement="S211_SimulatePayment">
+        <dc:Bounds x="220" y="160" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S211_PayShape_Gateway" bpmnElement="S211_PaymentResult" isMarkerVisible="true">
+        <dc:Bounds x="470" y="175" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S211_PayShape_Commission" bpmnElement="S211_CalculateCommission">
+        <dc:Bounds x="610" y="160" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S211_PayShape_EndSuccess" bpmnElement="S211_PayEndSuccess">
+        <dc:Bounds x="895" y="182" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S211_PayShape_EndOther" bpmnElement="S211_PayEndOther">
+        <dc:Bounds x="477" y="345" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="S211_PayEdge_Start_Simulate" bpmnElement="S211_PayFlow_Start_Simulate">
+        <di:waypoint x="136" y="200" />
+        <di:waypoint x="220" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="S211_PayEdge_Simulate_Gateway" bpmnElement="S211_PayFlow_Simulate_Gateway">
+        <di:waypoint x="380" y="200" />
+        <di:waypoint x="470" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="S211_PayEdge_Succeeded" bpmnElement="S211_PayFlow_Succeeded">
+        <di:waypoint x="520" y="200" />
+        <di:waypoint x="610" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="S211_PayEdge_Other" bpmnElement="S211_PayFlow_NotSucceeded">
+        <di:waypoint x="495" y="225" />
+        <di:waypoint x="495" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="S211_PayEdge_Commission_End" bpmnElement="S211_PayFlow_Commission_End">
+        <di:waypoint x="790" y="200" />
+        <di:waypoint x="895" y="200" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
